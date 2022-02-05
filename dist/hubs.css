@@ -5,6 +5,16 @@
 #edit.upclose[data-v-91ee6202] {
   color: #cc0a0a;
 }
+
+.fakeButton[data-v-4113a76e] {
+  color: #9803a5;
+  background: #a78e06
+  /* transition: color 1s; */
+}
+.fakeButton[data-v-4113a76e]:hover {
+  color: #a78e06;
+  background: #9803a5;
+}
 /* http://meyerweb.com/eric/tools/css/reset/
    v4.0 | 20180602
    License: none (public domain)
@@ -171,17 +181,6 @@ footer, header, hgroup, main, menu, nav, section {
       top:-120px;
     }
  
-a[data-v-b474cdac] {
-  color: #b542b9;
-}
-.fade[data-v-b474cdac] {
-  color: #9803a5;
-  /* transition: color 1s; */
-}
-.fade[data-v-b474cdac]:hover {
-  color: #06a71b;
-}
-
 a[data-v-0a280960] {
   color: #b542b9;
 }
@@ -191,4 +190,15 @@ a[data-v-0a280960] {
 }
 .fade[data-v-0a280960]:hover {
   color: #a78e06;
+}
+
+a[data-v-b474cdac] {
+  color: #b542b9;
+}
+.fade[data-v-b474cdac] {
+  color: #9803a5;
+  /* transition: color 1s; */
+}
+.fade[data-v-b474cdac]:hover {
+  color: #06a71b;
 }
