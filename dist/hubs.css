@@ -6,12 +6,12 @@
   color: #cc0a0a;
 }
 
-.fakeButton[data-v-4113a76e] {
+.fakeButton[data-v-1221d33f] {
   color: #9803a5;
   background: #a78e06
   /* transition: color 1s; */
 }
-.fakeButton[data-v-4113a76e]:hover {
+.fakeButton[data-v-1221d33f]:hover {
   color: #a78e06;
   background: #9803a5;
 }

@@ -193,12 +193,12 @@ a[data-v-051ea7d4] {
   color: #cc0a0a;
 }
 
-.fakeButton[data-v-113acda3] {
+.fakeButton[data-v-3e3fd8a5] {
   color: #9803a5;
   background: #a78e06
   /* transition: color 1s; */
 }
-.fakeButton[data-v-113acda3]:hover {
+.fakeButton[data-v-3e3fd8a5]:hover {
   color: #a78e06;
   background: #9803a5;
 }

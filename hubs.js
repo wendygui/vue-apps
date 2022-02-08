@@ -199,6 +199,6 @@ popScopeId();
 var App_vue_vue_type_style_index_0_scoped_true_lang$1 = "\n#edit[data-v-862575f2] {\n  color: #bea7d1;\n}\n#edit.upclose[data-v-862575f2] {\n  color: #cc0a0a;\n}\n";
 pushScopeId("data-v-862575f2");
 popScopeId();
-var App_vue_vue_type_style_index_0_scoped_true_lang = "\n.fakeButton[data-v-113acda3] {\n  color: #9803a5;\n  background: #a78e06\n  /* transition: color 1s; */\n}\n.fakeButton[data-v-113acda3]:hover {\n  color: #a78e06;\n  background: #9803a5;\n}\n";
-pushScopeId("data-v-113acda3");
+var App_vue_vue_type_style_index_0_scoped_true_lang = "\n.fakeButton[data-v-3e3fd8a5] {\n  color: #9803a5;\n  background: #a78e06\n  /* transition: color 1s; */\n}\n.fakeButton[data-v-3e3fd8a5]:hover {\n  color: #a78e06;\n  background: #9803a5;\n}\n";
+pushScopeId("data-v-3e3fd8a5");
 popScopeId();
