@@ -24322,7 +24322,7 @@ function ensureElementIsInDocument(element, options) {
   const containerShadow = container.attachShadow({ mode: "open" });
   containerShadow.appendChild(element);
   document.documentElement.appendChild(container);
-  return element;
+  return container;
 }
 const scratchMat1 = new Matrix4();
 const scratchMat2 = new Matrix4();
@@ -24502,7 +24502,7 @@ const _WebRenderer = class {
   static createLayerTree(element, options, eventCallback) {
     if (_WebRenderer.getClosestLayer(element))
       throw new Error("A root WebLayer for the given element already exists");
-    ensureElementIsInDocument(element);
+    const containerElement = ensureElementIsInDocument(element);
     _WebRenderer.initRootNodeObservation(element);
     const observer = new MutationObserver(_WebRenderer._handleMutations);
     this.mutationObservers.set(element, observer);
@@ -24525,7 +24525,7 @@ const _WebRenderer = class {
     element.addEventListener("transitionend", this._triggerRefresh, { capture: true });
     const layer = new WebLayer(options.manager, element, eventCallback);
     this.rootLayers.set(element, layer);
-    return layer;
+    return containerElement;
   }
   static disposeLayer(layer) {
     if (this.rootLayers.has(layer.element)) {
@@ -31477,7 +31477,7 @@ const _WebLayerManager = class extends WebLayerManagerBase {
   }
   getTexture(url, layer) {
     var _a2;
-    this.requestTexture(url);
+    this._requestTexture(url);
     const texture = this.texturesByUrl.get(url);
     if (texture) {
       if (layer)
@@ -31486,7 +31486,7 @@ const _WebLayerManager = class extends WebLayerManagerBase {
     }
     return void 0;
   }
-  requestTexture(url) {
+  _requestTexture(url) {
     if (!this._texturePromise.has(url)) {
       new Promise((resolve) => {
         this._texturePromise.set(url, resolve);
@@ -31522,6 +31522,7 @@ const scratchBounds2 = new Bounds();
 class WebContainer3D extends Object3D {
   constructor(elementOrHTML, options = {}) {
     super();
+    __publicField(this, "containerElement");
     __publicField(this, "options");
     __publicField(this, "rootLayer");
     __publicField(this, "_interactionRays", []);
@@ -31534,13 +31535,14 @@ class WebContainer3D extends Object3D {
         this._previousHoverLayers.add(layer);
       layer.cursor.visible = false;
       layer.desiredPseudoStates.hover = false;
-      this._contentMeshes.push(layer.contentMesh);
+      if (layer.contentMesh.visible)
+        this._contentMeshes.push(layer.contentMesh);
     });
     if (!options.manager)
       options.manager = WebLayerManager.instance;
     this.options = options;
     const element = typeof elementOrHTML === "string" ? toDOM(elementOrHTML) : elementOrHTML;
-    WebRenderer.createLayerTree(element, options, (event, { target }) => {
+    this.containerElement = WebRenderer.createLayerTree(element, options, (event, { target }) => {
       var _a2, _b, _c, _d;
       if (event === "layercreated") {
         const layer = target.layer || new WebLayer3D(target, this);
@@ -31666,6 +31668,11 @@ class WebContainer3D extends Object3D {
       return { layer, intersection, target };
     }
     return void 0;
+  }
+  destroy() {
+    this.containerElement.remove();
+    this.removeFromParent();
+    this.rootLayer.dispose();
   }
 }
 export { popScopeId as a, pushScopeId as p };
