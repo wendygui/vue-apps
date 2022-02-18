@@ -988,121 +988,13 @@ function toDOM(html) {
   wrapper.removeChild(el);
   return el;
 }
-var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
-(function(l2) {
-  function m() {
-  }
-  function k(a2, c2) {
-    a2 = a2 === void 0 ? "utf-8" : a2;
-    c2 = c2 === void 0 ? { fatal: false } : c2;
-    if (r2.indexOf(a2.toLowerCase()) === -1)
-      throw new RangeError("Failed to construct 'TextDecoder': The encoding label provided ('" + a2 + "') is invalid.");
-    if (c2.fatal)
-      throw Error("Failed to construct 'TextDecoder': the 'fatal' option is unsupported.");
-  }
-  function t(a2) {
-    return Buffer.from(a2.buffer, a2.byteOffset, a2.byteLength).toString("utf-8");
-  }
-  function u(a2) {
-    var c2 = URL.createObjectURL(new Blob([a2], { type: "text/plain;charset=UTF-8" }));
-    try {
-      var f2 = new XMLHttpRequest();
-      f2.open("GET", c2, false);
-      f2.send();
-      return f2.responseText;
-    } catch (e2) {
-      return q(a2);
-    } finally {
-      URL.revokeObjectURL(c2);
-    }
-  }
-  function q(a2) {
-    for (var c2 = 0, f2 = Math.min(65536, a2.length + 1), e2 = new Uint16Array(f2), h = [], d = 0; ; ) {
-      var b = c2 < a2.length;
-      if (!b || d >= f2 - 1) {
-        h.push(String.fromCharCode.apply(null, e2.subarray(0, d)));
-        if (!b)
-          return h.join("");
-        a2 = a2.subarray(c2);
-        d = c2 = 0;
-      }
-      b = a2[c2++];
-      if ((b & 128) === 0)
-        e2[d++] = b;
-      else if ((b & 224) === 192) {
-        var g = a2[c2++] & 63;
-        e2[d++] = (b & 31) << 6 | g;
-      } else if ((b & 240) === 224) {
-        g = a2[c2++] & 63;
-        var n2 = a2[c2++] & 63;
-        e2[d++] = (b & 31) << 12 | g << 6 | n2;
-      } else if ((b & 248) === 240) {
-        g = a2[c2++] & 63;
-        n2 = a2[c2++] & 63;
-        var v = a2[c2++] & 63;
-        b = (b & 7) << 18 | g << 12 | n2 << 6 | v;
-        65535 < b && (b -= 65536, e2[d++] = b >>> 10 & 1023 | 55296, b = 56320 | b & 1023);
-        e2[d++] = b;
-      }
-    }
-  }
-  if (l2.TextEncoder && l2.TextDecoder)
-    return false;
-  var r2 = ["utf-8", "utf8", "unicode-1-1-utf-8"];
-  Object.defineProperty(m.prototype, "encoding", { value: "utf-8" });
-  m.prototype.encode = function(a2, c2) {
-    c2 = c2 === void 0 ? { stream: false } : c2;
-    if (c2.stream)
-      throw Error("Failed to encode: the 'stream' option is unsupported.");
-    c2 = 0;
-    for (var f2 = a2.length, e2 = 0, h = Math.max(32, f2 + (f2 >>> 1) + 7), d = new Uint8Array(h >>> 3 << 3); c2 < f2; ) {
-      var b = a2.charCodeAt(c2++);
-      if (55296 <= b && 56319 >= b) {
-        if (c2 < f2) {
-          var g = a2.charCodeAt(c2);
-          (g & 64512) === 56320 && (++c2, b = ((b & 1023) << 10) + (g & 1023) + 65536);
-        }
-        if (55296 <= b && 56319 >= b)
-          continue;
-      }
-      e2 + 4 > d.length && (h += 8, h *= 1 + c2 / a2.length * 2, h = h >>> 3 << 3, g = new Uint8Array(h), g.set(d), d = g);
-      if ((b & 4294967168) === 0)
-        d[e2++] = b;
-      else {
-        if ((b & 4294965248) === 0)
-          d[e2++] = b >>> 6 & 31 | 192;
-        else if ((b & 4294901760) === 0)
-          d[e2++] = b >>> 12 & 15 | 224, d[e2++] = b >>> 6 & 63 | 128;
-        else if ((b & 4292870144) === 0)
-          d[e2++] = b >>> 18 & 7 | 240, d[e2++] = b >>> 12 & 63 | 128, d[e2++] = b >>> 6 & 63 | 128;
-        else
-          continue;
-        d[e2++] = b & 63 | 128;
-      }
-    }
-    return d.slice ? d.slice(0, e2) : d.subarray(0, e2);
-  };
-  Object.defineProperty(k.prototype, "encoding", { value: "utf-8" });
-  Object.defineProperty(k.prototype, "fatal", { value: false });
-  Object.defineProperty(k.prototype, "ignoreBOM", { value: false });
-  var p2 = q;
-  typeof Buffer === "function" && Buffer.from ? p2 = t : typeof Blob === "function" && typeof URL === "function" && typeof URL.createObjectURL === "function" && (p2 = u);
-  k.prototype.decode = function(a2, c2) {
-    c2 = c2 === void 0 ? { stream: false } : c2;
-    if (c2.stream)
-      throw Error("Failed to decode: the 'stream' option is unsupported.");
-    a2 = a2 instanceof Uint8Array ? a2 : a2.buffer instanceof ArrayBuffer ? new Uint8Array(a2.buffer) : new Uint8Array(a2);
-    return p2(a2);
-  };
-  l2.TextEncoder = m;
-  l2.TextDecoder = k;
-})(typeof window !== "undefined" ? window : typeof commonjsGlobal !== "undefined" ? commonjsGlobal : commonjsGlobal);
 class WebLayer {
   constructor(manager, element, eventCallback) {
     __publicField(this, "manager");
     __publicField(this, "element");
     __publicField(this, "eventCallback");
-    __publicField(this, "id");
+    __publicField(this, "isMediaElement", false);
+    __publicField(this, "isVideoElement", false);
     __publicField(this, "desiredPseudoState", {
       hover: false,
       active: false,
@@ -1114,8 +1006,9 @@ class WebLayer {
     __publicField(this, "parentLayer");
     __publicField(this, "childLayers", []);
     __publicField(this, "pixelRatio");
-    __publicField(this, "previousDOMStateHash");
-    __publicField(this, "currentDOMStateHash");
+    __publicField(this, "previousDOMStateKey");
+    __publicField(this, "desiredDOMStateKey");
+    __publicField(this, "currentDOMStatekey");
     __publicField(this, "domMetrics", {
       bounds: new Bounds(),
       padding: new Edges(),
@@ -1128,11 +1021,11 @@ class WebLayer {
     if (!manager)
       throw new Error("WebLayerManager must be initialized");
     WebRenderer.layers.set(element, this);
-    this.id = element.getAttribute(WebRenderer.ELEMENT_UID_ATTRIBUTE) || WebRenderer.generateElementUID();
-    element.setAttribute(WebRenderer.ELEMENT_UID_ATTRIBUTE, this.id);
     element.setAttribute(WebRenderer.LAYER_ATTRIBUTE, "");
     this.parentLayer = WebRenderer.getClosestLayer(this.element, false);
     this.eventCallback("layercreated", { target: element });
+    this.isVideoElement = element.nodeName === "VIDEO";
+    this.isMediaElement = this.isVideoElement || element.nodeName === "IMAGE" || element.nodeName === "CANVAS";
   }
   setNeedsRefresh(recurse = false) {
     this.needsRefresh = true;
@@ -1141,10 +1034,13 @@ class WebLayer {
         c2.setNeedsRefresh(recurse);
   }
   get previousDOMState() {
-    return this.previousDOMStateHash ? this.manager.getLayerState(this.previousDOMStateHash) : void 0;
+    return this.previousDOMStateKey ? this.manager.getLayerState(this.previousDOMStateKey) : void 0;
+  }
+  get desiredDOMState() {
+    return this.desiredDOMStateKey ? this.manager.getLayerState(this.desiredDOMStateKey) : void 0;
   }
   get currentDOMState() {
-    return this.currentDOMStateHash ? this.manager.getLayerState(this.currentDOMStateHash) : void 0;
+    return this.currentDOMStatekey ? this.manager.getLayerState(this.currentDOMStatekey) : void 0;
   }
   get depth() {
     let depth = 0;
@@ -1178,20 +1074,26 @@ class WebLayer {
     }
   }
   update() {
-    const prevState = this.previousDOMState;
-    const state = this.currentDOMState;
-    if ((prevState == null ? void 0 : prevState.texture.url) !== (state == null ? void 0 : state.texture.url)) {
+    if (this.desiredDOMStateKey !== this.currentDOMStatekey) {
+      const desired = this.desiredDOMState;
+      if (desired && (this.isMediaElement || desired.texture.url || desired.fullWidth * desired.fullHeight === 0)) {
+        this.currentDOMStatekey = this.desiredDOMStateKey;
+      }
+    }
+    const prev = this.previousDOMState;
+    const current = this.currentDOMState;
+    if ((prev == null ? void 0 : prev.texture.url) !== (current == null ? void 0 : current.texture.url)) {
       this.eventCallback("layerpainted", { target: this.element });
     }
-    this.previousDOMStateHash = this.currentDOMStateHash;
+    this.previousDOMStateKey = this.currentDOMStatekey;
   }
   async refresh() {
-    this.currentDOMStateHash = void 0;
+    this.currentDOMStatekey = void 0;
     this.needsRefresh = false;
     this._updateParentAndChildLayers();
     const result = await this.manager.addToSerializeQueue(this);
-    if (result.needsRasterize)
-      await this.manager.addToRasterizeQueue(result.svgHash, result.svgUrl);
+    if (result.needsRasterize && typeof result.stateKey === "string")
+      await this.manager.addToRasterizeQueue(result.stateKey, result.svgUrl);
   }
   _updateParentAndChildLayers() {
     const element = this.element;
@@ -1218,10 +1120,6 @@ class WebLayer {
       return false;
     const el = n2;
     const styles = getComputedStyle(el);
-    const id = el.getAttribute(WebRenderer.ELEMENT_UID_ATTRIBUTE);
-    if (!id) {
-      el.setAttribute(WebRenderer.ELEMENT_UID_ATTRIBUTE, WebRenderer.generateElementUID());
-    }
     const isLayer = el.hasAttribute(WebRenderer.LAYER_ATTRIBUTE);
     if (isLayer || el.nodeName === "VIDEO" || styles.transform !== "none") {
       let child = WebRenderer.layers.get(el);
@@ -24327,9 +24225,6 @@ function ensureElementIsInDocument(element, options) {
 const scratchMat1 = new Matrix4();
 const scratchMat2 = new Matrix4();
 const _WebRenderer = class {
-  static get ELEMENT_UID_ATTRIBUTE() {
-    return this.ATTRIBUTE_PREFIX + "-uid";
-  }
   static get HOVER_ATTRIBUTE() {
     return this.ATTRIBUTE_PREFIX + "-hover";
   }
@@ -24362,9 +24257,6 @@ const _WebRenderer = class {
   }
   static get RENDERING_DOCUMENT_ATTRIBUTE() {
     return this.ATTRIBUTE_PREFIX + "-rendering-document";
-  }
-  static generateElementUID() {
-    return "" + this._nextUID++;
   }
   static getPsuedoAttributes(states) {
     return `${states.hover ? `${this.HOVER_ATTRIBUTE}="" ` : " "}${states.focus ? `${this.FOCUS_ATTRIBUTE}="" ` : " "}${states.active ? `${this.ACTIVE_ATTRIBUTE}="" ` : " "}${states.target ? `${this.TARGET_ATTRIBUTE}="" ` : " "}`;
@@ -24743,7 +24635,6 @@ const _WebRenderer = class {
 };
 let WebRenderer = _WebRenderer;
 __publicField(WebRenderer, "ATTRIBUTE_PREFIX", "xr");
-__publicField(WebRenderer, "_nextUID", 0);
 __publicField(WebRenderer, "serializer", new XMLSerializer());
 __publicField(WebRenderer, "rootLayers", new Map());
 __publicField(WebRenderer, "layers", new Map());
@@ -24882,11 +24773,11 @@ const _WebLayer3D = class extends Object3D {
   get texture() {
     var _a2;
     const manager = this.container.manager;
-    if (this.element.tagName === "VIDEO") {
-      const video = this.element;
+    if (this._webLayer.isMediaElement) {
+      const media = this.element;
       let t2 = this._mediaTexture;
       if (!t2) {
-        t2 = new VideoTexture(video);
+        t2 = this._webLayer.isVideoElement ? new VideoTexture(media) : new Texture(media);
         t2.wrapS = ClampToEdgeWrapping;
         t2.wrapT = ClampToEdgeWrapping;
         t2.minFilter = LinearFilter;
@@ -24984,7 +24875,7 @@ const _WebLayer3D = class extends Object3D {
         this.parent.remove(this);
       this.dispose();
     }
-    this._refreshVideoBounds();
+    this._refreshMediaBounds();
   }
   [ON_BEFORE_UPDATE]() {
   }
@@ -25058,45 +24949,48 @@ const _WebLayer3D = class extends Object3D {
     for (const child of this.childWebLayers)
       child.dispose();
   }
-  _refreshVideoBounds() {
-    if (this.element.nodeName === "VIDEO") {
+  _refreshMediaBounds() {
+    if (this._webLayer.isMediaElement) {
+      const isVideo = this._webLayer.isVideoElement;
       const domState = this.domState;
       if (!domState)
         return;
-      const video = this.element;
+      const media = this.element;
       const texture = this.texture;
       const computedStyle = getComputedStyle(this.element);
       const { objectFit } = computedStyle;
       const { width: viewWidth, height: viewHeight } = this.bounds.copy(domState.bounds);
-      const { videoWidth, videoHeight } = video;
-      const videoRatio = videoWidth / videoHeight;
+      media.naturalWidth;
+      const naturalWidth = isVideo ? media.videoWidth : media.naturalWidth;
+      const naturalHeight = isVideo ? media.videoHeight : media.naturalHeight;
+      const mediaRatio = naturalWidth / naturalHeight;
       const viewRatio = viewWidth / viewHeight;
       texture.center.set(0.5, 0.5);
       switch (objectFit) {
         case "none":
-          texture.repeat.set(viewWidth / videoWidth, viewHeight / videoHeight).clampScalar(0, 1);
+          texture.repeat.set(viewWidth / naturalWidth, viewHeight / naturalHeight).clampScalar(0, 1);
           break;
         case "contain":
         case "scale-down":
           texture.repeat.set(1, 1);
-          if (viewRatio > videoRatio) {
-            const width = this.bounds.height * videoRatio || 0;
+          if (viewRatio > mediaRatio) {
+            const width = this.bounds.height * mediaRatio || 0;
             this.bounds.left += (this.bounds.width - width) / 2;
             this.bounds.width = width;
           } else {
-            const height = this.bounds.width / videoRatio || 0;
+            const height = this.bounds.width / mediaRatio || 0;
             this.bounds.top += (this.bounds.height - height) / 2;
             this.bounds.height = height;
           }
           break;
         case "cover":
-          texture.repeat.set(viewWidth / videoWidth, viewHeight / videoHeight);
-          if (viewRatio < videoRatio) {
-            const width = this.bounds.height * videoRatio || 0;
+          texture.repeat.set(viewWidth / naturalWidth, viewHeight / naturalHeight);
+          if (viewRatio < mediaRatio) {
+            const width = this.bounds.height * mediaRatio || 0;
             this.bounds.left += (this.bounds.width - width) / 2;
             this.bounds.width = width;
           } else {
-            const height = this.bounds.width / videoRatio || 0;
+            const height = this.bounds.width / mediaRatio || 0;
             this.bounds.top += (this.bounds.height - height) / 2;
             this.bounds.height = height;
           }
@@ -31193,11 +31087,13 @@ function byteArrayToHex(byteArray) {
 function bufferToHex(arrayBuffer) {
   return byteArrayToHex(new Uint8Array(arrayBuffer));
 }
-class TextureStore extends Dexie$1 {
+class LayerStore extends Dexie$1 {
   constructor(name) {
     super(name);
+    __publicField(this, "states");
     __publicField(this, "textures");
-    this.version(1).stores({
+    this.version(2).stores({
+      states: "&hash",
       textures: "&hash, lastUsedTime"
     });
   }
@@ -31211,7 +31107,7 @@ function nextPowerOf2(n2) {
 class WebLayerManagerBase {
   constructor(name = "web-layer-cache") {
     __publicField(this, "WebRenderer", WebRenderer);
-    __publicField(this, "_textureStore");
+    __publicField(this, "_layerStore");
     __publicField(this, "_textureUrls", new Map());
     __publicField(this, "_textureData", new Map());
     __publicField(this, "_layerState", new Map());
@@ -31250,10 +31146,20 @@ class WebLayerManagerBase {
       }
       this.tasksPending = false;
     });
-    this._textureStore = new TextureStore(name);
+    this._layerStore = new LayerStore(name);
     window.addEventListener("blur", (event) => {
-      this._textureStore.textures.bulkPut(Array.from(this._textureData.values()));
+      this.saveStore();
     });
+    window.addEventListener("focus", (event) => {
+      this.saveStore();
+    });
+    window.addEventListener("visibilitychange", (event) => {
+      this.saveStore();
+    });
+  }
+  saveStore() {
+    this._layerStore.states.bulkPut(Array.from(this._layerState.entries()).filter(([k, v]) => typeof k === "string").map(([k, v]) => ({ hash: k, textureHash: v.texture.hash })));
+    this._layerStore.textures.bulkPut(Array.from(this._textureData.values()));
   }
   getLayerState(hash) {
     let data = this._layerState.get(hash);
@@ -31285,6 +31191,14 @@ class WebLayerManagerBase {
     }
     return data;
   }
+  async requestLayerState(hash) {
+    const fullState = this.getLayerState(hash);
+    if (typeof hash === "string" && !fullState.texture.hash) {
+      const state = await this._layerStore.states.get(hash);
+      fullState.texture.hash = state == null ? void 0 : state.textureHash;
+    }
+    return fullState;
+  }
   async updateTexture(textureHash, imageData) {
     var _a2;
     const ktx2Texture = await this.ktx2Encoder.encode(imageData);
@@ -31298,7 +31212,7 @@ class WebLayerManagerBase {
     if (!this._textureDataResolver.has(textureHash)) {
       return new Promise(async (resolve) => {
         this._textureDataResolver.set(textureHash, resolve);
-        const textureData = await this._textureStore.textures.get(textureHash);
+        const textureData = await this._layerStore.textures.get(textureHash);
         if ((textureData == null ? void 0 : textureData.texture) && !this._textureData.has(textureHash)) {
           this._textureData.set(textureHash, textureData);
           this._textureUrls.set(textureHash, URL.createObjectURL(new Blob([textureData.texture], { type: "image/ktx2" })));
@@ -31325,7 +31239,7 @@ class WebLayerManagerBase {
     const inQueue = this.serializeQueue.find((v) => v.layer === layer);
     if (inQueue)
       return inQueue.promise;
-    layer.currentDOMStateHash = void 0;
+    layer.currentDOMStatekey = void 0;
     let resolve;
     const promise = new Promise((r2) => {
       resolve = r2;
@@ -31345,22 +31259,29 @@ class WebLayerManagerBase {
     getPadding(layerElement, metrics.padding);
     getBorder(layerElement, metrics.border);
     const pixelRatio = layer.pixelRatio || parseFloat(layer.element.getAttribute(WebRenderer.PIXEL_RATIO_ATTRIBUTE)) || window.devicePixelRatio;
-    const elementAttribute = WebRenderer.attributeHTML(WebRenderer.ELEMENT_UID_ATTRIBUTE, "" + layer.id);
-    const computedStyle = getComputedStyle(layerElement);
-    const needsInlineBlock = computedStyle.display === "inline";
-    WebRenderer.updateInputAttributes(layerElement);
-    const parentsHTML = getParentsHTML(layer, fullWidth, fullHeight, pixelRatio);
-    const svgCSS = await WebRenderer.getAllEmbeddedStyles(layerElement);
-    let layerHTML = await serializeToString(layerElement);
-    layerHTML = layerHTML.replace(elementAttribute, `${elementAttribute} ${WebRenderer.RENDERING_ATTRIBUTE}="" ${needsInlineBlock ? `${WebRenderer.RENDERING_INLINE_ATTRIBUTE}="" ` : " "} ` + WebRenderer.getPsuedoAttributes(layer.desiredPseudoState));
     const textureWidth = Math.max(nextPowerOf2(fullWidth * pixelRatio), 32);
     const textureHeight = Math.max(nextPowerOf2(fullHeight * pixelRatio), 32);
-    const docString = '<svg width="' + textureWidth + '" height="' + textureHeight + '" xmlns="http://www.w3.org/2000/svg"><defs><style type="text/css"><![CDATA[\n' + svgCSS.join("\n") + ']]></style></defs><foreignObject x="0" y="0" width="' + fullWidth * pixelRatio + '" height="' + fullHeight * pixelRatio + '">' + parentsHTML[0] + layerHTML + parentsHTML[1] + "</foreignObject></svg>";
-    const svgUrl = "data:image/svg+xml;utf8," + encodeURIComponent(docString);
-    const stateHashBuffer = await crypto.subtle.digest("SHA-1", this.textEncoder.encode(docString));
-    const stateHash = bufferToHex(stateHashBuffer) + "?w=" + fullWidth + ";h=" + fullHeight + ";tw=" + textureWidth + ";th=" + textureHeight;
-    layer.currentDOMStateHash = stateHash;
-    const data = this.getLayerState(stateHash);
+    const result = {};
+    if (layer.isMediaElement) {
+      result.stateKey = layerElement;
+    } else {
+      const layerAttribute = WebRenderer.attributeHTML(WebRenderer.LAYER_ATTRIBUTE, "");
+      const computedStyle = getComputedStyle(layerElement);
+      const needsInlineBlock = computedStyle.display === "inline";
+      WebRenderer.updateInputAttributes(layerElement);
+      const parentsHTML = getParentsHTML(layer, fullWidth, fullHeight, pixelRatio);
+      const svgCSS = await WebRenderer.getAllEmbeddedStyles(layerElement);
+      let layerHTML = await serializeToString(layerElement);
+      layerHTML = layerHTML.replace(layerAttribute, `${layerAttribute} ${WebRenderer.RENDERING_ATTRIBUTE}="" ${needsInlineBlock ? `${WebRenderer.RENDERING_INLINE_ATTRIBUTE}="" ` : " "} ` + WebRenderer.getPsuedoAttributes(layer.desiredPseudoState));
+      const docString = '<svg width="' + textureWidth + '" height="' + textureHeight + '" xmlns="http://www.w3.org/2000/svg"><defs><style type="text/css"><![CDATA[\n' + svgCSS.join("\n") + ']]></style></defs><foreignObject x="0" y="0" width="' + fullWidth * pixelRatio + '" height="' + fullHeight * pixelRatio + '">' + parentsHTML[0] + layerHTML + parentsHTML[1] + "</foreignObject></svg>";
+      const svgUrl = "data:image/svg+xml;utf8," + encodeURIComponent(docString);
+      const stateHashBuffer = await crypto.subtle.digest("SHA-1", this.textEncoder.encode(docString));
+      const stateHash = bufferToHex(stateHashBuffer) + "?w=" + fullWidth + ";h=" + fullHeight + ";tw=" + textureWidth + ";th=" + textureHeight;
+      result.svgUrl = svgUrl;
+      result.stateKey = stateHash;
+    }
+    layer.desiredDOMStateKey = result.stateKey;
+    const data = await this.requestLayerState(result.stateKey);
     data.bounds.copy(metrics.bounds);
     data.margin.copy(metrics.margin);
     data.fullWidth = fullWidth;
@@ -31368,10 +31289,8 @@ class WebLayerManagerBase {
     data.texture.width = textureWidth;
     data.texture.height = textureHeight;
     data.texture.pixelRatio = pixelRatio;
-    layer._svgUrl = svgUrl;
-    const nodeName = layer.element.nodeName;
-    const needsRasterize = fullWidth * fullHeight > 0 && nodeName !== "VIDEO" && (data.renderAttempts < this.MINIMUM_RENDER_ATTEMPTS || !data.texture.hash);
-    return { svgHash: stateHash, svgUrl, needsRasterize };
+    result.needsRasterize = !layer.isMediaElement && fullWidth * fullHeight > 0 && (data.renderAttempts < this.MINIMUM_RENDER_ATTEMPTS || !data.texture.hash);
+    return result;
   }
   async rasterize(stateHash, svgUrl) {
     const stateData = this.getLayerState(stateHash);
