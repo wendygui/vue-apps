@@ -1023,9 +1023,9 @@ class WebLayer {
     WebRenderer.layers.set(element, this);
     element.setAttribute(WebRenderer.LAYER_ATTRIBUTE, "");
     this.parentLayer = WebRenderer.getClosestLayer(this.element, false);
-    this.eventCallback("layercreated", { target: element });
     this.isVideoElement = element.nodeName === "VIDEO";
-    this.isMediaElement = this.isVideoElement || element.nodeName === "IMAGE" || element.nodeName === "CANVAS";
+    this.isMediaElement = this.isVideoElement || element.nodeName === "IMG" || element.nodeName === "CANVAS";
+    this.eventCallback("layercreated", { target: element });
   }
   setNeedsRefresh(recurse = false) {
     this.needsRefresh = true;
@@ -24710,6 +24710,7 @@ const _WebLayer3D = class extends Object3D {
     __publicField(this, "_localZ", 0);
     __publicField(this, "_viewZ", 0);
     __publicField(this, "_renderZ", 0);
+    __publicField(this, "_mediaSrc");
     __publicField(this, "_mediaTexture");
     __publicField(this, "textures", new Set());
     __publicField(this, "_previousTexture");
@@ -24731,7 +24732,7 @@ const _WebLayer3D = class extends Object3D {
     this.name = element.id;
     this._webLayer = WebRenderer.getClosestLayer(element);
     element.layer = this;
-    const geometry = this.element.nodeName === "VIDEO" ? _WebLayer3D.GEOMETRY : _WebLayer3D.FLIPPED_GEOMETRY;
+    const geometry = this._webLayer.isMediaElement ? _WebLayer3D.GEOMETRY : _WebLayer3D.FLIPPED_GEOMETRY;
     this.contentMesh = new Mesh(geometry, new MeshBasicMaterial({
       side: DoubleSide,
       depthWrite: false,
@@ -24776,8 +24777,10 @@ const _WebLayer3D = class extends Object3D {
     if (this._webLayer.isMediaElement) {
       const media = this.element;
       let t2 = this._mediaTexture;
-      if (!t2) {
-        t2 = this._webLayer.isVideoElement ? new VideoTexture(media) : new Texture(media);
+      if (!t2 || t2.image && media.src !== t2.image.src) {
+        if (t2)
+          t2.dispose();
+        t2 = this._webLayer.isVideoElement ? new VideoTexture(media) : new TextureLoader().load(media.src);
         t2.wrapS = ClampToEdgeWrapping;
         t2.wrapT = ClampToEdgeWrapping;
         t2.minFilter = LinearFilter;
@@ -24960,7 +24963,6 @@ const _WebLayer3D = class extends Object3D {
       const computedStyle = getComputedStyle(this.element);
       const { objectFit } = computedStyle;
       const { width: viewWidth, height: viewHeight } = this.bounds.copy(domState.bounds);
-      media.naturalWidth;
       const naturalWidth = isVideo ? media.videoWidth : media.naturalWidth;
       const naturalHeight = isVideo ? media.videoHeight : media.naturalHeight;
       const mediaRatio = naturalWidth / naturalHeight;
