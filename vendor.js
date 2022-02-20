@@ -17,826 +17,10 @@ var __spreadValues = (a2, b) => {
   return a2;
 };
 var __spreadProps = (a2, b) => __defProps(a2, __getOwnPropDescs(b));
-var __require = typeof require !== "undefined" ? require : (x) => {
-  throw new Error('Dynamic require of "' + x + '" is not supported');
-};
 var __publicField = (obj, key, value) => {
   __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   return value;
 };
-const EMPTY_OBJ = {};
-const NOOP = () => {
-};
-const extend$1 = Object.assign;
-const remove = (arr, el) => {
-  const i2 = arr.indexOf(el);
-  if (i2 > -1) {
-    arr.splice(i2, 1);
-  }
-};
-const isArray$1 = Array.isArray;
-const isMap = (val) => toTypeString(val) === "[object Map]";
-const isSet = (val) => toTypeString(val) === "[object Set]";
-const isFunction = (val) => typeof val === "function";
-const isString = (val) => typeof val === "string";
-const isSymbol = (val) => typeof val === "symbol";
-const isObject = (val) => val !== null && typeof val === "object";
-const isPromise = (val) => {
-  return isObject(val) && isFunction(val.then) && isFunction(val.catch);
-};
-const objectToString = Object.prototype.toString;
-const toTypeString = (value) => objectToString.call(value);
-const isPlainObject = (val) => toTypeString(val) === "[object Object]";
-const hasChanged = (value, oldValue) => !Object.is(value, oldValue);
-const def = (obj, key, value) => {
-  Object.defineProperty(obj, key, {
-    configurable: true,
-    enumerable: false,
-    value
-  });
-};
-let activeEffectScope;
-function recordEffectScope(effect, scope) {
-  scope = scope || activeEffectScope;
-  if (scope && scope.active) {
-    scope.effects.push(effect);
-  }
-}
-const wasTracked = (dep) => (dep.w & trackOpBit) > 0;
-const newTracked = (dep) => (dep.n & trackOpBit) > 0;
-const initDepMarkers = ({ deps }) => {
-  if (deps.length) {
-    for (let i2 = 0; i2 < deps.length; i2++) {
-      deps[i2].w |= trackOpBit;
-    }
-  }
-};
-const finalizeDepMarkers = (effect) => {
-  const { deps } = effect;
-  if (deps.length) {
-    let ptr = 0;
-    for (let i2 = 0; i2 < deps.length; i2++) {
-      const dep = deps[i2];
-      if (wasTracked(dep) && !newTracked(dep)) {
-        dep.delete(effect);
-      } else {
-        deps[ptr++] = dep;
-      }
-      dep.w &= ~trackOpBit;
-      dep.n &= ~trackOpBit;
-    }
-    deps.length = ptr;
-  }
-};
-let effectTrackDepth = 0;
-let trackOpBit = 1;
-const maxMarkerBits = 30;
-const effectStack = [];
-let activeEffect;
-class ReactiveEffect {
-  constructor(fn, scheduler2 = null, scope) {
-    this.fn = fn;
-    this.scheduler = scheduler2;
-    this.active = true;
-    this.deps = [];
-    recordEffectScope(this, scope);
-  }
-  run() {
-    if (!this.active) {
-      return this.fn();
-    }
-    if (!effectStack.includes(this)) {
-      try {
-        effectStack.push(activeEffect = this);
-        enableTracking();
-        trackOpBit = 1 << ++effectTrackDepth;
-        if (effectTrackDepth <= maxMarkerBits) {
-          initDepMarkers(this);
-        } else {
-          cleanupEffect(this);
-        }
-        return this.fn();
-      } finally {
-        if (effectTrackDepth <= maxMarkerBits) {
-          finalizeDepMarkers(this);
-        }
-        trackOpBit = 1 << --effectTrackDepth;
-        resetTracking();
-        effectStack.pop();
-        const n2 = effectStack.length;
-        activeEffect = n2 > 0 ? effectStack[n2 - 1] : void 0;
-      }
-    }
-  }
-  stop() {
-    if (this.active) {
-      cleanupEffect(this);
-      if (this.onStop) {
-        this.onStop();
-      }
-      this.active = false;
-    }
-  }
-}
-function cleanupEffect(effect) {
-  const { deps } = effect;
-  if (deps.length) {
-    for (let i2 = 0; i2 < deps.length; i2++) {
-      deps[i2].delete(effect);
-    }
-    deps.length = 0;
-  }
-}
-let shouldTrack = true;
-const trackStack = [];
-function pauseTracking() {
-  trackStack.push(shouldTrack);
-  shouldTrack = false;
-}
-function enableTracking() {
-  trackStack.push(shouldTrack);
-  shouldTrack = true;
-}
-function resetTracking() {
-  const last = trackStack.pop();
-  shouldTrack = last === void 0 ? true : last;
-}
-new Set(Object.getOwnPropertyNames(Symbol).map((key) => Symbol[key]).filter(isSymbol));
-function isReactive(value) {
-  if (isReadonly(value)) {
-    return isReactive(value["__v_raw"]);
-  }
-  return !!(value && value["__v_isReactive"]);
-}
-function isReadonly(value) {
-  return !!(value && value["__v_isReadonly"]);
-}
-function toRaw(observed) {
-  const raw = observed && observed["__v_raw"];
-  return raw ? toRaw(raw) : observed;
-}
-function markRaw(value) {
-  def(value, "__v_skip", true);
-  return value;
-}
-function isRef(r2) {
-  return Boolean(r2 && r2.__v_isRef === true);
-}
-function unref(ref) {
-  return isRef(ref) ? ref.value : ref;
-}
-const shallowUnwrapHandlers = {
-  get: (target, key, receiver) => unref(Reflect.get(target, key, receiver)),
-  set: (target, key, value, receiver) => {
-    const oldValue = target[key];
-    if (isRef(oldValue) && !isRef(value)) {
-      oldValue.value = value;
-      return true;
-    } else {
-      return Reflect.set(target, key, value, receiver);
-    }
-  }
-};
-function proxyRefs(objectWithRefs) {
-  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
-}
-Promise.resolve();
-let currentScopeId = null;
-function pushScopeId(id) {
-  currentScopeId = id;
-}
-function popScopeId() {
-  currentScopeId = null;
-}
-function queueEffectWithSuspense(fn, suspense) {
-  if (suspense && suspense.pendingBranch) {
-    if (isArray$1(fn)) {
-      suspense.effects.push(...fn);
-    } else {
-      suspense.effects.push(fn);
-    }
-  } else {
-    queuePostFlushCb(fn);
-  }
-}
-function resolveMergedOptions(instance2) {
-  const base = instance2.type;
-  const { mixins, extends: extendsOptions } = base;
-  const { mixins: globalMixins, optionsCache: cache2, config: { optionMergeStrategies } } = instance2.appContext;
-  const cached = cache2.get(base);
-  let resolved;
-  if (cached) {
-    resolved = cached;
-  } else if (!globalMixins.length && !mixins && !extendsOptions) {
-    {
-      resolved = base;
-    }
-  } else {
-    resolved = {};
-    if (globalMixins.length) {
-      globalMixins.forEach((m) => mergeOptions(resolved, m, optionMergeStrategies, true));
-    }
-    mergeOptions(resolved, base, optionMergeStrategies);
-  }
-  cache2.set(base, resolved);
-  return resolved;
-}
-function mergeOptions(to, from, strats, asMixin = false) {
-  const { mixins, extends: extendsOptions } = from;
-  if (extendsOptions) {
-    mergeOptions(to, extendsOptions, strats, true);
-  }
-  if (mixins) {
-    mixins.forEach((m) => mergeOptions(to, m, strats, true));
-  }
-  for (const key in from) {
-    if (asMixin && key === "expose")
-      ;
-    else {
-      const strat = internalOptionMergeStrats[key] || strats && strats[key];
-      to[key] = strat ? strat(to[key], from[key]) : from[key];
-    }
-  }
-  return to;
-}
-const internalOptionMergeStrats = {
-  data: mergeDataFn,
-  props: mergeObjectOptions,
-  emits: mergeObjectOptions,
-  methods: mergeObjectOptions,
-  computed: mergeObjectOptions,
-  beforeCreate: mergeAsArray,
-  created: mergeAsArray,
-  beforeMount: mergeAsArray,
-  mounted: mergeAsArray,
-  beforeUpdate: mergeAsArray,
-  updated: mergeAsArray,
-  beforeDestroy: mergeAsArray,
-  beforeUnmount: mergeAsArray,
-  destroyed: mergeAsArray,
-  unmounted: mergeAsArray,
-  activated: mergeAsArray,
-  deactivated: mergeAsArray,
-  errorCaptured: mergeAsArray,
-  serverPrefetch: mergeAsArray,
-  components: mergeObjectOptions,
-  directives: mergeObjectOptions,
-  watch: mergeWatchOptions,
-  provide: mergeDataFn,
-  inject: mergeInject
-};
-function mergeDataFn(to, from) {
-  if (!from) {
-    return to;
-  }
-  if (!to) {
-    return from;
-  }
-  return function mergedDataFn() {
-    return extend$1(isFunction(to) ? to.call(this, this) : to, isFunction(from) ? from.call(this, this) : from);
-  };
-}
-function mergeInject(to, from) {
-  return mergeObjectOptions(normalizeInject(to), normalizeInject(from));
-}
-function normalizeInject(raw) {
-  if (isArray$1(raw)) {
-    const res = {};
-    for (let i2 = 0; i2 < raw.length; i2++) {
-      res[raw[i2]] = raw[i2];
-    }
-    return res;
-  }
-  return raw;
-}
-function mergeAsArray(to, from) {
-  return to ? [...new Set([].concat(to, from))] : from;
-}
-function mergeObjectOptions(to, from) {
-  return to ? extend$1(extend$1(Object.create(null), to), from) : from;
-}
-function mergeWatchOptions(to, from) {
-  if (!to)
-    return from;
-  if (!from)
-    return to;
-  const merged = extend$1(Object.create(null), to);
-  for (const key in from) {
-    merged[key] = mergeAsArray(to[key], from[key]);
-  }
-  return merged;
-}
-const queuePostRenderEffect = queueEffectWithSuspense;
-const getPublicInstance = (i2) => {
-  if (!i2)
-    return null;
-  if (isStatefulComponent(i2))
-    return getExposeProxy(i2) || i2.proxy;
-  return getPublicInstance(i2.parent);
-};
-const publicPropertiesMap = extend$1(Object.create(null), {
-  $: (i2) => i2,
-  $el: (i2) => i2.vnode.el,
-  $data: (i2) => i2.data,
-  $props: (i2) => i2.props,
-  $attrs: (i2) => i2.attrs,
-  $slots: (i2) => i2.slots,
-  $refs: (i2) => i2.refs,
-  $parent: (i2) => getPublicInstance(i2.parent),
-  $root: (i2) => getPublicInstance(i2.root),
-  $emit: (i2) => i2.emit,
-  $options: (i2) => resolveMergedOptions(i2),
-  $forceUpdate: (i2) => () => queueJob(i2.update),
-  $nextTick: (i2) => nextTick.bind(i2.proxy),
-  $watch: (i2) => instanceWatch.bind(i2)
-});
-let currentInstance = null;
-const setCurrentInstance = (instance2) => {
-  currentInstance = instance2;
-  instance2.scope.on();
-};
-const unsetCurrentInstance = () => {
-  currentInstance && currentInstance.scope.off();
-  currentInstance = null;
-};
-function isStatefulComponent(instance2) {
-  return instance2.vnode.shapeFlag & 4;
-}
-function getExposeProxy(instance2) {
-  if (instance2.exposed) {
-    return instance2.exposeProxy || (instance2.exposeProxy = new Proxy(proxyRefs(markRaw(instance2.exposed)), {
-      get(target, key) {
-        if (key in target) {
-          return target[key];
-        } else if (key in publicPropertiesMap) {
-          return publicPropertiesMap[key](instance2);
-        }
-      }
-    }));
-  }
-}
-const classifyRE = /(?:^|[-_])(\w)/g;
-const classify = (str) => str.replace(classifyRE, (c2) => c2.toUpperCase()).replace(/[-_]/g, "");
-function getComponentName(Component) {
-  return isFunction(Component) ? Component.displayName || Component.name : Component.name;
-}
-function formatComponentName(instance2, Component, isRoot = false) {
-  let name = getComponentName(Component);
-  if (!name && Component.__file) {
-    const match = Component.__file.match(/([^/\\]+)\.\w+$/);
-    if (match) {
-      name = match[1];
-    }
-  }
-  if (!name && instance2 && instance2.parent) {
-    const inferFromRegistry = (registry) => {
-      for (const key in registry) {
-        if (registry[key] === Component) {
-          return key;
-        }
-      }
-    };
-    name = inferFromRegistry(instance2.components || instance2.parent.type.components) || inferFromRegistry(instance2.appContext.components);
-  }
-  return name ? classify(name) : isRoot ? `App` : `Anonymous`;
-}
-const stack = [];
-function warn(msg2, ...args) {
-  pauseTracking();
-  const instance2 = stack.length ? stack[stack.length - 1].component : null;
-  const appWarnHandler = instance2 && instance2.appContext.config.warnHandler;
-  const trace = getComponentTrace();
-  if (appWarnHandler) {
-    callWithErrorHandling(appWarnHandler, instance2, 11, [
-      msg2 + args.join(""),
-      instance2 && instance2.proxy,
-      trace.map(({ vnode }) => `at <${formatComponentName(instance2, vnode.type)}>`).join("\n"),
-      trace
-    ]);
-  } else {
-    const warnArgs = [`[Vue warn]: ${msg2}`, ...args];
-    if (trace.length && true) {
-      warnArgs.push(`
-`, ...formatTrace(trace));
-    }
-    console.warn(...warnArgs);
-  }
-  resetTracking();
-}
-function getComponentTrace() {
-  let currentVNode = stack[stack.length - 1];
-  if (!currentVNode) {
-    return [];
-  }
-  const normalizedStack = [];
-  while (currentVNode) {
-    const last = normalizedStack[0];
-    if (last && last.vnode === currentVNode) {
-      last.recurseCount++;
-    } else {
-      normalizedStack.push({
-        vnode: currentVNode,
-        recurseCount: 0
-      });
-    }
-    const parentInstance = currentVNode.component && currentVNode.component.parent;
-    currentVNode = parentInstance && parentInstance.vnode;
-  }
-  return normalizedStack;
-}
-function formatTrace(trace) {
-  const logs = [];
-  trace.forEach((entry, i2) => {
-    logs.push(...i2 === 0 ? [] : [`
-`], ...formatTraceEntry(entry));
-  });
-  return logs;
-}
-function formatTraceEntry({ vnode, recurseCount }) {
-  const postfix = recurseCount > 0 ? `... (${recurseCount} recursive calls)` : ``;
-  const isRoot = vnode.component ? vnode.component.parent == null : false;
-  const open = ` at <${formatComponentName(vnode.component, vnode.type, isRoot)}`;
-  const close = `>` + postfix;
-  return vnode.props ? [open, ...formatProps(vnode.props), close] : [open + close];
-}
-function formatProps(props2) {
-  const res = [];
-  const keys2 = Object.keys(props2);
-  keys2.slice(0, 3).forEach((key) => {
-    res.push(...formatProp(key, props2[key]));
-  });
-  if (keys2.length > 3) {
-    res.push(` ...`);
-  }
-  return res;
-}
-function formatProp(key, value, raw) {
-  if (isString(value)) {
-    value = JSON.stringify(value);
-    return raw ? value : [`${key}=${value}`];
-  } else if (typeof value === "number" || typeof value === "boolean" || value == null) {
-    return raw ? value : [`${key}=${value}`];
-  } else if (isRef(value)) {
-    value = formatProp(key, toRaw(value.value), true);
-    return raw ? value : [`${key}=Ref<`, value, `>`];
-  } else if (isFunction(value)) {
-    return [`${key}=fn${value.name ? `<${value.name}>` : ``}`];
-  } else {
-    value = toRaw(value);
-    return raw ? value : [`${key}=`, value];
-  }
-}
-function callWithErrorHandling(fn, instance2, type2, args) {
-  let res;
-  try {
-    res = args ? fn(...args) : fn();
-  } catch (err) {
-    handleError(err, instance2, type2);
-  }
-  return res;
-}
-function callWithAsyncErrorHandling(fn, instance2, type2, args) {
-  if (isFunction(fn)) {
-    const res = callWithErrorHandling(fn, instance2, type2, args);
-    if (res && isPromise(res)) {
-      res.catch((err) => {
-        handleError(err, instance2, type2);
-      });
-    }
-    return res;
-  }
-  const values = [];
-  for (let i2 = 0; i2 < fn.length; i2++) {
-    values.push(callWithAsyncErrorHandling(fn[i2], instance2, type2, args));
-  }
-  return values;
-}
-function handleError(err, instance2, type2, throwInDev = true) {
-  const contextVNode = instance2 ? instance2.vnode : null;
-  if (instance2) {
-    let cur = instance2.parent;
-    const exposedInstance = instance2.proxy;
-    const errorInfo = type2;
-    while (cur) {
-      const errorCapturedHooks = cur.ec;
-      if (errorCapturedHooks) {
-        for (let i2 = 0; i2 < errorCapturedHooks.length; i2++) {
-          if (errorCapturedHooks[i2](err, exposedInstance, errorInfo) === false) {
-            return;
-          }
-        }
-      }
-      cur = cur.parent;
-    }
-    const appErrorHandler = instance2.appContext.config.errorHandler;
-    if (appErrorHandler) {
-      callWithErrorHandling(appErrorHandler, null, 10, [err, exposedInstance, errorInfo]);
-      return;
-    }
-  }
-  logError(err, type2, contextVNode, throwInDev);
-}
-function logError(err, type2, contextVNode, throwInDev = true) {
-  {
-    console.error(err);
-  }
-}
-let isFlushing = false;
-let isFlushPending = false;
-const queue = [];
-let flushIndex = 0;
-const pendingPreFlushCbs = [];
-let activePreFlushCbs = null;
-let preFlushIndex = 0;
-const pendingPostFlushCbs = [];
-let activePostFlushCbs = null;
-let postFlushIndex = 0;
-const resolvedPromise = Promise.resolve();
-let currentFlushPromise = null;
-let currentPreFlushParentJob = null;
-const RECURSION_LIMIT = 100;
-function nextTick(fn) {
-  const p2 = currentFlushPromise || resolvedPromise;
-  return fn ? p2.then(this ? fn.bind(this) : fn) : p2;
-}
-function findInsertionIndex(id) {
-  let start = flushIndex + 1;
-  let end = queue.length;
-  while (start < end) {
-    const middle = start + end >>> 1;
-    const middleJobId = getId(queue[middle]);
-    middleJobId < id ? start = middle + 1 : end = middle;
-  }
-  return start;
-}
-function queueJob(job) {
-  if ((!queue.length || !queue.includes(job, isFlushing && job.allowRecurse ? flushIndex + 1 : flushIndex)) && job !== currentPreFlushParentJob) {
-    if (job.id == null) {
-      queue.push(job);
-    } else {
-      queue.splice(findInsertionIndex(job.id), 0, job);
-    }
-    queueFlush();
-  }
-}
-function queueFlush() {
-  if (!isFlushing && !isFlushPending) {
-    isFlushPending = true;
-    currentFlushPromise = resolvedPromise.then(flushJobs);
-  }
-}
-function queueCb(cb, activeQueue, pendingQueue, index) {
-  if (!isArray$1(cb)) {
-    if (!activeQueue || !activeQueue.includes(cb, cb.allowRecurse ? index + 1 : index)) {
-      pendingQueue.push(cb);
-    }
-  } else {
-    pendingQueue.push(...cb);
-  }
-  queueFlush();
-}
-function queuePreFlushCb(cb) {
-  queueCb(cb, activePreFlushCbs, pendingPreFlushCbs, preFlushIndex);
-}
-function queuePostFlushCb(cb) {
-  queueCb(cb, activePostFlushCbs, pendingPostFlushCbs, postFlushIndex);
-}
-function flushPreFlushCbs(seen, parentJob = null) {
-  if (pendingPreFlushCbs.length) {
-    currentPreFlushParentJob = parentJob;
-    activePreFlushCbs = [...new Set(pendingPreFlushCbs)];
-    pendingPreFlushCbs.length = 0;
-    for (preFlushIndex = 0; preFlushIndex < activePreFlushCbs.length; preFlushIndex++) {
-      activePreFlushCbs[preFlushIndex]();
-    }
-    activePreFlushCbs = null;
-    preFlushIndex = 0;
-    currentPreFlushParentJob = null;
-    flushPreFlushCbs(seen, parentJob);
-  }
-}
-function flushPostFlushCbs(seen) {
-  if (pendingPostFlushCbs.length) {
-    const deduped = [...new Set(pendingPostFlushCbs)];
-    pendingPostFlushCbs.length = 0;
-    if (activePostFlushCbs) {
-      activePostFlushCbs.push(...deduped);
-      return;
-    }
-    activePostFlushCbs = deduped;
-    activePostFlushCbs.sort((a2, b) => getId(a2) - getId(b));
-    for (postFlushIndex = 0; postFlushIndex < activePostFlushCbs.length; postFlushIndex++) {
-      activePostFlushCbs[postFlushIndex]();
-    }
-    activePostFlushCbs = null;
-    postFlushIndex = 0;
-  }
-}
-const getId = (job) => job.id == null ? Infinity : job.id;
-function flushJobs(seen) {
-  isFlushPending = false;
-  isFlushing = true;
-  flushPreFlushCbs(seen);
-  queue.sort((a2, b) => getId(a2) - getId(b));
-  try {
-    for (flushIndex = 0; flushIndex < queue.length; flushIndex++) {
-      const job = queue[flushIndex];
-      if (job && job.active !== false) {
-        if (false)
-          ;
-        callWithErrorHandling(job, null, 14);
-      }
-    }
-  } finally {
-    flushIndex = 0;
-    queue.length = 0;
-    flushPostFlushCbs();
-    isFlushing = false;
-    currentFlushPromise = null;
-    if (queue.length || pendingPreFlushCbs.length || pendingPostFlushCbs.length) {
-      flushJobs(seen);
-    }
-  }
-}
-function checkRecursiveUpdates(seen, fn) {
-  if (!seen.has(fn)) {
-    seen.set(fn, 1);
-  } else {
-    const count = seen.get(fn);
-    if (count > RECURSION_LIMIT) {
-      const instance2 = fn.ownerInstance;
-      const componentName = instance2 && getComponentName(instance2.type);
-      warn(`Maximum recursive updates exceeded${componentName ? ` in component <${componentName}>` : ``}. This means you have a reactive effect that is mutating its own dependencies and thus recursively triggering itself. Possible sources include component template, render function, updated hook or watcher source function.`);
-      return true;
-    } else {
-      seen.set(fn, count + 1);
-    }
-  }
-}
-const INITIAL_WATCHER_VALUE = {};
-function doWatch(source, cb, { immediate, deep, flush, onTrack, onTrigger } = EMPTY_OBJ) {
-  const instance2 = currentInstance;
-  let getter;
-  let forceTrigger = false;
-  let isMultiSource = false;
-  if (isRef(source)) {
-    getter = () => source.value;
-    forceTrigger = !!source._shallow;
-  } else if (isReactive(source)) {
-    getter = () => source;
-    deep = true;
-  } else if (isArray$1(source)) {
-    isMultiSource = true;
-    forceTrigger = source.some(isReactive);
-    getter = () => source.map((s2) => {
-      if (isRef(s2)) {
-        return s2.value;
-      } else if (isReactive(s2)) {
-        return traverse(s2);
-      } else if (isFunction(s2)) {
-        return callWithErrorHandling(s2, instance2, 2);
-      } else
-        ;
-    });
-  } else if (isFunction(source)) {
-    if (cb) {
-      getter = () => callWithErrorHandling(source, instance2, 2);
-    } else {
-      getter = () => {
-        if (instance2 && instance2.isUnmounted) {
-          return;
-        }
-        if (cleanup) {
-          cleanup();
-        }
-        return callWithAsyncErrorHandling(source, instance2, 3, [onInvalidate]);
-      };
-    }
-  } else {
-    getter = NOOP;
-  }
-  if (cb && deep) {
-    const baseGetter = getter;
-    getter = () => traverse(baseGetter());
-  }
-  let cleanup;
-  let onInvalidate = (fn) => {
-    cleanup = effect.onStop = () => {
-      callWithErrorHandling(fn, instance2, 4);
-    };
-  };
-  let oldValue = isMultiSource ? [] : INITIAL_WATCHER_VALUE;
-  const job = () => {
-    if (!effect.active) {
-      return;
-    }
-    if (cb) {
-      const newValue = effect.run();
-      if (deep || forceTrigger || (isMultiSource ? newValue.some((v, i2) => hasChanged(v, oldValue[i2])) : hasChanged(newValue, oldValue)) || false) {
-        if (cleanup) {
-          cleanup();
-        }
-        callWithAsyncErrorHandling(cb, instance2, 3, [
-          newValue,
-          oldValue === INITIAL_WATCHER_VALUE ? void 0 : oldValue,
-          onInvalidate
-        ]);
-        oldValue = newValue;
-      }
-    } else {
-      effect.run();
-    }
-  };
-  job.allowRecurse = !!cb;
-  let scheduler2;
-  if (flush === "sync") {
-    scheduler2 = job;
-  } else if (flush === "post") {
-    scheduler2 = () => queuePostRenderEffect(job, instance2 && instance2.suspense);
-  } else {
-    scheduler2 = () => {
-      if (!instance2 || instance2.isMounted) {
-        queuePreFlushCb(job);
-      } else {
-        job();
-      }
-    };
-  }
-  const effect = new ReactiveEffect(getter, scheduler2);
-  if (cb) {
-    if (immediate) {
-      job();
-    } else {
-      oldValue = effect.run();
-    }
-  } else if (flush === "post") {
-    queuePostRenderEffect(effect.run.bind(effect), instance2 && instance2.suspense);
-  } else {
-    effect.run();
-  }
-  return () => {
-    effect.stop();
-    if (instance2 && instance2.scope) {
-      remove(instance2.scope.effects, effect);
-    }
-  };
-}
-function instanceWatch(source, value, options) {
-  const publicThis = this.proxy;
-  const getter = isString(source) ? source.includes(".") ? createPathGetter(publicThis, source) : () => publicThis[source] : source.bind(publicThis, publicThis);
-  let cb;
-  if (isFunction(value)) {
-    cb = value;
-  } else {
-    cb = value.handler;
-    options = value;
-  }
-  const cur = currentInstance;
-  setCurrentInstance(this);
-  const res = doWatch(getter, cb.bind(publicThis), options);
-  if (cur) {
-    setCurrentInstance(cur);
-  } else {
-    unsetCurrentInstance();
-  }
-  return res;
-}
-function createPathGetter(ctx, path) {
-  const segments = path.split(".");
-  return () => {
-    let cur = ctx;
-    for (let i2 = 0; i2 < segments.length && cur; i2++) {
-      cur = cur[segments[i2]];
-    }
-    return cur;
-  };
-}
-function traverse(value, seen = new Set()) {
-  if (!isObject(value) || value["__v_skip"]) {
-    return value;
-  }
-  seen = seen || new Set();
-  if (seen.has(value)) {
-    return value;
-  }
-  seen.add(value);
-  if (isRef(value)) {
-    traverse(value.value, seen);
-  } else if (isArray$1(value)) {
-    for (let i2 = 0; i2 < value.length; i2++) {
-      traverse(value[i2], seen);
-    }
-  } else if (isSet(value) || isMap(value)) {
-    value.forEach((v) => {
-      traverse(v, seen);
-    });
-  } else if (isPlainObject(value)) {
-    for (const key in value) {
-      traverse(value[key], seen);
-    }
-  }
-  return value;
-}
 function traverseChildElements(element, each, bind, level = 0) {
   var _a2;
   level++;
@@ -8228,7 +7412,7 @@ function WebGLAnimation() {
 }
 function WebGLAttributes(gl, capabilities) {
   const isWebGL2 = capabilities.isWebGL2;
-  const buffers = new WeakMap();
+  const buffers = /* @__PURE__ */ new WeakMap();
   function createBuffer(attribute, bufferType) {
     const array = attribute.array;
     const usage = attribute.usage;
@@ -8291,7 +7475,7 @@ function WebGLAttributes(gl, capabilities) {
       attribute = attribute.data;
     return buffers.get(attribute);
   }
-  function remove2(attribute) {
+  function remove(attribute) {
     if (attribute.isInterleavedBufferAttribute)
       attribute = attribute.data;
     const data = buffers.get(attribute);
@@ -8325,7 +7509,7 @@ function WebGLAttributes(gl, capabilities) {
   }
   return {
     get,
-    remove: remove2,
+    remove,
     update
   };
 }
@@ -9644,7 +8828,7 @@ function WebGLClipping(properties) {
   }
 }
 function WebGLCubeMaps(renderer) {
-  let cubemaps = new WeakMap();
+  let cubemaps = /* @__PURE__ */ new WeakMap();
   function mapTextureMapping(texture, mapping) {
     if (mapping === EquirectangularReflectionMapping) {
       texture.mapping = CubeReflectionMapping;
@@ -9688,7 +8872,7 @@ function WebGLCubeMaps(renderer) {
     }
   }
   function dispose() {
-    cubemaps = new WeakMap();
+    cubemaps = /* @__PURE__ */ new WeakMap();
   }
   return {
     get,
@@ -9752,7 +8936,7 @@ function WebGLExtensions(gl) {
 }
 function WebGLGeometries(gl, attributes, info, bindingStates) {
   const geometries = {};
-  const wireframeAttributes = new WeakMap();
+  const wireframeAttributes = /* @__PURE__ */ new WeakMap();
   function onGeometryDispose(event) {
     const geometry = event.target;
     if (geometry.index !== null) {
@@ -10010,7 +9194,7 @@ function WebGLMorphtargets(gl) {
   };
 }
 function WebGLObjects(gl, geometries, attributes, info) {
-  let updateMap = new WeakMap();
+  let updateMap = /* @__PURE__ */ new WeakMap();
   function update(object) {
     const frame = info.render.frame;
     const geometry = object.geometry;
@@ -10031,7 +9215,7 @@ function WebGLObjects(gl, geometries, attributes, info) {
     return buffergeometry;
   }
   function dispose() {
-    updateMap = new WeakMap();
+    updateMap = /* @__PURE__ */ new WeakMap();
   }
   function onInstancedMeshDispose(event) {
     const instancedMesh = event.target;
@@ -11416,7 +10600,7 @@ function WebGLPrograms(renderer, cubemaps, extensions, capabilities, bindingStat
   };
 }
 function WebGLProperties() {
-  let properties = new WeakMap();
+  let properties = /* @__PURE__ */ new WeakMap();
   function get(object) {
     let map = properties.get(object);
     if (map === void 0) {
@@ -11425,18 +10609,18 @@ function WebGLProperties() {
     }
     return map;
   }
-  function remove2(object) {
+  function remove(object) {
     properties.delete(object);
   }
   function update(object, key, value) {
     properties.get(object)[key] = value;
   }
   function dispose() {
-    properties = new WeakMap();
+    properties = /* @__PURE__ */ new WeakMap();
   }
   return {
     get,
-    remove: remove2,
+    remove,
     update,
     dispose
   };
@@ -11563,7 +10747,7 @@ function WebGLRenderList(properties) {
   };
 }
 function WebGLRenderLists(properties) {
-  let lists = new WeakMap();
+  let lists = /* @__PURE__ */ new WeakMap();
   function get(scene, renderCallDepth) {
     let list;
     if (lists.has(scene) === false) {
@@ -11580,7 +10764,7 @@ function WebGLRenderLists(properties) {
     return list;
   }
   function dispose() {
-    lists = new WeakMap();
+    lists = /* @__PURE__ */ new WeakMap();
   }
   return {
     get,
@@ -11967,7 +11151,7 @@ function WebGLRenderState(extensions, capabilities) {
   };
 }
 function WebGLRenderStates(extensions, capabilities) {
-  let renderStates = new WeakMap();
+  let renderStates = /* @__PURE__ */ new WeakMap();
   function get(scene, renderCallDepth = 0) {
     let renderState;
     if (renderStates.has(scene) === false) {
@@ -11984,7 +11168,7 @@ function WebGLRenderStates(extensions, capabilities) {
     return renderState;
   }
   function dispose() {
-    renderStates = new WeakMap();
+    renderStates = /* @__PURE__ */ new WeakMap();
   }
   return {
     get,
@@ -12894,7 +12078,7 @@ function WebGLTextures(_gl, extensions, state, properties, capabilities, utils, 
   const maxCubemapSize = capabilities.maxCubemapSize;
   const maxTextureSize = capabilities.maxTextureSize;
   const maxSamples = capabilities.maxSamples;
-  const _videoTextures = new WeakMap();
+  const _videoTextures = /* @__PURE__ */ new WeakMap();
   let _canvas2;
   let useOffscreenCanvas = false;
   try {
@@ -13959,7 +13143,7 @@ class WebXRManager extends EventDispatcher {
     let glFramebuffer = null;
     let glProjLayer = null;
     const controllers = [];
-    const inputSourcesMap = new Map();
+    const inputSourcesMap = /* @__PURE__ */ new Map();
     const cameraL = new PerspectiveCamera();
     cameraL.layers.enable(1);
     cameraL.viewport = new Vector4();
@@ -15342,7 +14526,7 @@ function WebGLRenderer(parameters = {}) {
     materialProperties.envMap = cubemaps.get(material.envMap || materialProperties.environment);
     if (programs === void 0) {
       material.addEventListener("dispose", onMaterialDispose);
-      programs = new Map();
+      programs = /* @__PURE__ */ new Map();
       materialProperties.programs = programs;
     }
     let program = programs.get(programCacheKey);
@@ -17659,7 +16843,7 @@ function splitEarcut(start, triangles, dim, minX, minY, invSize) {
   } while (a2 !== start);
 }
 function eliminateHoles(data, holeIndices, outerNode, dim) {
-  const queue2 = [];
+  const queue = [];
   let i2, len, start, end, list;
   for (i2 = 0, len = holeIndices.length; i2 < len; i2++) {
     start = holeIndices[i2] * dim;
@@ -17667,11 +16851,11 @@ function eliminateHoles(data, holeIndices, outerNode, dim) {
     list = linkedList(data, start, end, dim, false);
     if (list === list.next)
       list.steiner = true;
-    queue2.push(getLeftmost(list));
+    queue.push(getLeftmost(list));
   }
-  queue2.sort(compareX);
-  for (i2 = 0; i2 < queue2.length; i2++) {
-    eliminateHole(queue2[i2], outerNode);
+  queue.sort(compareX);
+  for (i2 = 0; i2 < queue.length; i2++) {
+    eliminateHole(queue[i2], outerNode);
     outerNode = filterPoints(outerNode, outerNode.next);
   }
   return outerNode;
@@ -23797,7 +22981,7 @@ var isReplacedElement = function(target) {
   return false;
 };
 var global$1 = typeof window !== "undefined" ? window : {};
-var cache = new WeakMap();
+var cache = /* @__PURE__ */ new WeakMap();
 var scrollRegexp = /auto|scroll/;
 var verticalRegexp = /^tb|vertical/;
 var IE = /msie|trident/i.test(global$1.navigator && global$1.navigator.userAgent);
@@ -24125,7 +23309,7 @@ var ResizeObserverDetail = function() {
   }
   return ResizeObserverDetail2;
 }();
-var observerMap = new WeakMap();
+var observerMap = /* @__PURE__ */ new WeakMap();
 var getObservationIndex = function(observationTargets, target) {
   for (var i2 = 0; i2 < observationTargets.length; i2 += 1) {
     if (observationTargets[i2].target === target) {
@@ -24544,7 +23728,7 @@ const _WebRenderer = class {
   }
   static async getAllEmbeddedStyles(el) {
     const rootNode = el.getRootNode();
-    const embedded = this.embeddedStyles.get(rootNode) || new Map();
+    const embedded = this.embeddedStyles.get(rootNode) || /* @__PURE__ */ new Map();
     this.embeddedStyles.set(rootNode, embedded);
     const styleElements = Array.from(rootNode.querySelectorAll("style, link[type='text/css'], link[rel='stylesheet']"));
     const inShadow = el.getRootNode() instanceof ShadowRoot;
@@ -24636,14 +23820,14 @@ const _WebRenderer = class {
 let WebRenderer = _WebRenderer;
 __publicField(WebRenderer, "ATTRIBUTE_PREFIX", "xr");
 __publicField(WebRenderer, "serializer", new XMLSerializer());
-__publicField(WebRenderer, "rootLayers", new Map());
-__publicField(WebRenderer, "layers", new Map());
+__publicField(WebRenderer, "rootLayers", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "layers", /* @__PURE__ */ new Map());
 __publicField(WebRenderer, "focusElement", null);
 __publicField(WebRenderer, "activeElement", null);
 __publicField(WebRenderer, "targetElement", null);
-__publicField(WebRenderer, "mutationObservers", new Map());
-__publicField(WebRenderer, "resizeObservers", new Map());
-__publicField(WebRenderer, "rootNodeObservers", new Map());
+__publicField(WebRenderer, "mutationObservers", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "resizeObservers", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "rootNodeObservers", /* @__PURE__ */ new Map());
 __publicField(WebRenderer, "containerStyleElement");
 __publicField(WebRenderer, "_handleMutations", (records) => {
   var _a2, _b;
@@ -24686,10 +23870,10 @@ __publicField(WebRenderer, "_triggerRefresh", async (e2) => {
     layer.parentLayer ? layer.parentLayer.traverseChildLayers(_WebRenderer.setLayerNeedsRefresh) : layer.traverseLayers(_WebRenderer.setLayerNeedsRefresh);
   }
 });
-__publicField(WebRenderer, "embeddedStyles", new Map());
-__publicField(WebRenderer, "fontStyles", new Map());
-__publicField(WebRenderer, "dataURLMap", new Map());
-__publicField(WebRenderer, "embeddedCSSMap", new Map());
+__publicField(WebRenderer, "embeddedStyles", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "fontStyles", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "dataURLMap", /* @__PURE__ */ new Map());
+__publicField(WebRenderer, "embeddedCSSMap", /* @__PURE__ */ new Map());
 const ON_BEFORE_UPDATE = Symbol("ON_BEFORE_UPDATE");
 const scratchVector$1 = new Vector3();
 const scratchMatrix = new Matrix4();
@@ -24712,7 +23896,7 @@ const _WebLayer3D = class extends Object3D {
     __publicField(this, "_renderZ", 0);
     __publicField(this, "_mediaSrc");
     __publicField(this, "_mediaTexture");
-    __publicField(this, "textures", new Set());
+    __publicField(this, "textures", /* @__PURE__ */ new Set());
     __publicField(this, "_previousTexture");
     __publicField(this, "contentMesh");
     __publicField(this, "_boundsMesh");
@@ -25135,7 +24319,7 @@ function p(t) {
   const R = g + d._offset, E = R + A, T = E + S, O = T + m, P = new Uint8Array(t.buffer, t.byteOffset + R, A), C = new Uint8Array(t.buffer, t.byteOffset + E, S), F = new Uint8Array(t.buffer, t.byteOffset + T, m), G = new Uint8Array(t.buffer, t.byteOffset + O, L);
   return i2.globalData = { endpointCount: B, selectorCount: w, imageDescs: I, endpointsData: P, selectorsData: C, tablesData: F, extendedData: G }, i2;
 }
-const _taskCache = new WeakMap();
+const _taskCache = /* @__PURE__ */ new WeakMap();
 class BasisTextureLoader extends Loader {
   constructor(manager) {
     super(manager);
@@ -25188,7 +24372,7 @@ class BasisTextureLoader extends Loader {
   }
   parseInternalAsync(options) {
     const { levels } = options;
-    const buffers = new Set();
+    const buffers = /* @__PURE__ */ new Set();
     for (let i2 = 0; i2 < levels.length; i2++) {
       buffers.add(levels[i2].data.buffer);
     }
@@ -25924,7 +25108,7 @@ arrayToObject(intrinsicTypeNames, function(x) {
 });
 var circularRefs = null;
 function deepClone(any) {
-  circularRefs = typeof WeakMap !== "undefined" && new WeakMap();
+  circularRefs = typeof WeakMap !== "undefined" && /* @__PURE__ */ new WeakMap();
   var rv = innerDeepClone(any);
   circularRefs = null;
   return rv;
@@ -26022,13 +25206,13 @@ function getErrorWithStack() {
   return new Error();
 }
 function prettyStack(exception, numIgnoredFrames) {
-  var stack2 = exception.stack;
-  if (!stack2)
+  var stack = exception.stack;
+  if (!stack)
     return "";
   numIgnoredFrames = numIgnoredFrames || 0;
-  if (stack2.indexOf(exception.name) === 0)
+  if (stack.indexOf(exception.name) === 0)
     numIgnoredFrames += (exception.name + exception.message).split("\n").length;
-  return stack2.split("\n").slice(numIgnoredFrames).filter(libraryFilter).map(function(frame) {
+  return stack.split("\n").slice(numIgnoredFrames).filter(libraryFilter).map(function(frame) {
     return "\n" + frame;
   }).join("");
 }
@@ -26394,10 +25578,10 @@ props(DexiePromise.prototype, {
       try {
         stack_being_generated = true;
         var stacks = getStack(this, [], MAX_LONG_STACKS);
-        var stack2 = stacks.join("\nFrom previous: ");
+        var stack = stacks.join("\nFrom previous: ");
         if (this._state !== null)
-          this._stack = stack2;
-        return stack2;
+          this._stack = stack;
+        return stack;
       } finally {
         stack_being_generated = false;
       }
@@ -26646,23 +25830,23 @@ function callListener(cb, promise, listener) {
 function getStack(promise, stacks, limit) {
   if (stacks.length === limit)
     return stacks;
-  var stack2 = "";
+  var stack = "";
   if (promise._state === false) {
     var failure = promise._value, errorName, message;
     if (failure != null) {
       errorName = failure.name || "Error";
       message = failure.message || failure;
-      stack2 = prettyStack(failure, 0);
+      stack = prettyStack(failure, 0);
     } else {
       errorName = failure;
       message = "";
     }
-    stacks.push(errorName + (message ? ": " + message : "") + stack2);
+    stacks.push(errorName + (message ? ": " + message : "") + stack);
   }
   if (debug) {
-    stack2 = prettyStack(promise._stackHolder, 2);
-    if (stack2 && stacks.indexOf(stack2) === -1)
-      stacks.push(stack2);
+    stack = prettyStack(promise._stackHolder, 2);
+    if (stack && stacks.indexOf(stack) === -1)
+      stacks.push(stack);
     if (promise._prev)
       getStack(promise._prev, stacks, limit);
   }
@@ -26961,7 +26145,15 @@ function tempTransaction(db, mode, storeNames, fn) {
     var trans = db._createTransaction(mode, storeNames, db._dbSchema);
     try {
       trans.create();
+      db._state.PR1398_maxLoop = 3;
     } catch (ex) {
+      if (ex.name === errnames.InvalidState && db.isOpen() && --db._state.PR1398_maxLoop > 0) {
+        console.warn("Dexie: Need to reopen db");
+        db._close();
+        return db.open().then(function() {
+          return tempTransaction(db, mode, storeNames, fn);
+        });
+      }
       return rejection(ex);
     }
     return trans._promise(mode, function(resolve, reject) {
@@ -26976,7 +26168,7 @@ function tempTransaction(db, mode, storeNames, fn) {
     });
   }
 }
-var DEXIE_VERSION = "3.2.0";
+var DEXIE_VERSION = "3.2.1";
 var maxString = String.fromCharCode(65535);
 var minKey = -Infinity;
 var INVALID_KEY_ARGUMENT = "Invalid key provided. Keys must be of type string, number, Date or Array<string | number | Date>.";
@@ -29111,7 +28303,7 @@ function runUpgraders(db, oldVersion, idbUpgradeTrans, reject) {
 }
 function updateTablesAndIndexes(_a2, oldVersion, trans, idbUpgradeTrans) {
   var db = _a2._novip;
-  var queue2 = [];
+  var queue = [];
   var versions = db._versions;
   var globalSchema = db._dbSchema = buildGlobalSchema(db, db.idbdb, idbUpgradeTrans);
   var anyContentUpgraderHasRun = false;
@@ -29119,7 +28311,7 @@ function updateTablesAndIndexes(_a2, oldVersion, trans, idbUpgradeTrans) {
     return v._cfg.version >= oldVersion;
   });
   versToRun.forEach(function(version) {
-    queue2.push(function() {
+    queue.push(function() {
       var oldSchema = globalSchema;
       var newSchema = version._cfg.dbschema;
       adjustToExistingIndexNames(db, oldSchema, idbUpgradeTrans);
@@ -29177,7 +28369,7 @@ function updateTablesAndIndexes(_a2, oldVersion, trans, idbUpgradeTrans) {
         });
       }
     });
-    queue2.push(function(idbtrans) {
+    queue.push(function(idbtrans) {
       if (!anyContentUpgraderHasRun || !hasIEDeleteObjectStoreBug) {
         var newSchema = version._cfg.dbschema;
         deleteRemovedTables(newSchema, idbtrans);
@@ -29188,7 +28380,7 @@ function updateTablesAndIndexes(_a2, oldVersion, trans, idbUpgradeTrans) {
     });
   });
   function runQueue() {
-    return queue2.length ? DexiePromise.resolve(queue2.shift()(trans.idbtrans)).then(runQueue) : DexiePromise.resolve();
+    return queue.length ? DexiePromise.resolve(queue.shift()(trans.idbtrans)).then(runQueue) : DexiePromise.resolve();
   }
   return runQueue().then(function() {
     createMissingTables(globalSchema, idbUpgradeTrans);
@@ -29587,7 +28779,19 @@ function enterTransactionScope(db, mode, storeNames, parentTransaction, scopeFun
     if (parentTransaction) {
       trans.idbtrans = parentTransaction.idbtrans;
     } else {
-      trans.create();
+      try {
+        trans.create();
+        db._state.PR1398_maxLoop = 3;
+      } catch (ex) {
+        if (ex.name === errnames.InvalidState && db.isOpen() && --db._state.PR1398_maxLoop > 0) {
+          console.warn("Dexie: Need to reopen db");
+          db._close();
+          return db.open().then(function() {
+            return enterTransactionScope(db, mode, storeNames, null, scopeFunc);
+          });
+        }
+        return rejection(ex);
+      }
     }
     var scopeFuncIsAsync = isAsyncFunction(scopeFunc);
     if (scopeFuncIsAsync) {
@@ -30282,7 +29486,8 @@ var Dexie$1 = function() {
       dbReadyPromise: null,
       cancelOpen: nop,
       openCanceller: null,
-      autoSchema: true
+      autoSchema: true,
+      PR1398_maxLoop: 3
     };
     state.dbReadyPromise = new DexiePromise(function(resolve) {
       state.dbReadyResolve = resolve;
@@ -30394,20 +29599,20 @@ var Dexie$1 = function() {
     }).then(fn);
   };
   Dexie2.prototype.use = function(_a2) {
-    var stack2 = _a2.stack, create = _a2.create, level = _a2.level, name = _a2.name;
+    var stack = _a2.stack, create = _a2.create, level = _a2.level, name = _a2.name;
     if (name)
-      this.unuse({ stack: stack2, name });
-    var middlewares = this._middlewares[stack2] || (this._middlewares[stack2] = []);
-    middlewares.push({ stack: stack2, create, level: level == null ? 10 : level, name });
+      this.unuse({ stack, name });
+    var middlewares = this._middlewares[stack] || (this._middlewares[stack] = []);
+    middlewares.push({ stack, create, level: level == null ? 10 : level, name });
     middlewares.sort(function(a2, b) {
       return a2.level - b.level;
     });
     return this;
   };
   Dexie2.prototype.unuse = function(_a2) {
-    var stack2 = _a2.stack, name = _a2.name, create = _a2.create;
-    if (stack2 && this._middlewares[stack2]) {
-      this._middlewares[stack2] = this._middlewares[stack2].filter(function(mw) {
+    var stack = _a2.stack, name = _a2.name, create = _a2.create;
+    if (stack && this._middlewares[stack]) {
+      this._middlewares[stack] = this._middlewares[stack].filter(function(mw) {
         return create ? mw.create !== create : name ? mw.name !== name : false;
       });
     }
@@ -31110,9 +30315,9 @@ class WebLayerManagerBase {
   constructor(name = "web-layer-cache") {
     __publicField(this, "WebRenderer", WebRenderer);
     __publicField(this, "_layerStore");
-    __publicField(this, "_textureUrls", new Map());
-    __publicField(this, "_textureData", new Map());
-    __publicField(this, "_layerState", new Map());
+    __publicField(this, "_textureUrls", /* @__PURE__ */ new Map());
+    __publicField(this, "_textureData", /* @__PURE__ */ new Map());
+    __publicField(this, "_layerState", /* @__PURE__ */ new Map());
     __publicField(this, "serializeQueue", []);
     __publicField(this, "rasterizeQueue", []);
     __publicField(this, "MINIMUM_RENDER_ATTEMPTS", 3);
@@ -31121,7 +30326,7 @@ class WebLayerManagerBase {
     __publicField(this, "textEncoder", new TextEncoder());
     __publicField(this, "ktx2Encoder", new KTX2Encoder());
     __publicField(this, "useCreateImageBitmap", false);
-    __publicField(this, "_textureDataResolver", new Map());
+    __publicField(this, "_textureDataResolver", /* @__PURE__ */ new Map());
     __publicField(this, "tasksPending", false);
     __publicField(this, "serializePendingCount", 0);
     __publicField(this, "rasterizePendingCount", 0);
@@ -31382,13 +30587,13 @@ const _WebLayerManager = class extends WebLayerManagerBase {
     super();
     __publicField(this, "renderer");
     __publicField(this, "textureEncoding", sRGBEncoding);
-    __publicField(this, "texturesByUrl", new Map());
-    __publicField(this, "layersUsingTexture", new WeakMap());
+    __publicField(this, "texturesByUrl", /* @__PURE__ */ new Map());
+    __publicField(this, "layersUsingTexture", /* @__PURE__ */ new WeakMap());
     __publicField(this, "textureLoader", new KTX2Loader());
-    __publicField(this, "layersByElement", new WeakMap());
-    __publicField(this, "layersByMesh", new WeakMap());
+    __publicField(this, "layersByElement", /* @__PURE__ */ new WeakMap());
+    __publicField(this, "layersByMesh", /* @__PURE__ */ new WeakMap());
     __publicField(this, "pixelsPerUnit", 1e3);
-    __publicField(this, "_texturePromise", new Map());
+    __publicField(this, "_texturePromise", /* @__PURE__ */ new Map());
     this.textureLoader.setTranscoderPath(_WebLayerManager.DEFAULT_TRANSCODER_PATH);
   }
   static initialize(renderer) {
@@ -31416,7 +30621,7 @@ const _WebLayerManager = class extends WebLayerManagerBase {
           t.wrapT = ClampToEdgeWrapping;
           t.minFilter = LinearFilter;
           t.encoding = this.textureEncoding;
-          this.layersUsingTexture.set(t, new Set());
+          this.layersUsingTexture.set(t, /* @__PURE__ */ new Set());
           this.texturesByUrl.set(url, t);
         }).finally(() => {
           resolve(void 0);
@@ -31449,7 +30654,7 @@ class WebContainer3D extends Object3D {
     __publicField(this, "_interactionRays", []);
     __publicField(this, "_raycaster", new Raycaster());
     __publicField(this, "_hitIntersections", []);
-    __publicField(this, "_previousHoverLayers", new Set());
+    __publicField(this, "_previousHoverLayers", /* @__PURE__ */ new Set());
     __publicField(this, "_contentMeshes", []);
     __publicField(this, "_prepareHitTest", (layer) => {
       if (layer.desiredPseudoStates.hover)
@@ -31596,4 +30801,3 @@ class WebContainer3D extends Object3D {
     this.rootLayer.dispose();
   }
 }
-export { popScopeId as a, pushScopeId as p };

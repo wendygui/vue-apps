@@ -181,6 +181,17 @@ footer, header, hgroup, main, menu, nav, section {
       top:-120px;
     }
  
+a[data-v-b474cdac] {
+  color: #b542b9;
+}
+.fade[data-v-b474cdac] {
+  color: #9803a5;
+  /* transition: color 1s; */
+}
+.fade[data-v-b474cdac]:hover {
+  color: #06a71b;
+}
+
 a[data-v-06a9f319] {
   color: #b542b9;
 }
@@ -193,15 +204,4 @@ button[data-v-06a9f319] {
 }
 .fade[data-v-06a9f319]:hover {
   color: #a78e06;
-}
-
-a[data-v-b474cdac] {
-  color: #b542b9;
-}
-.fade[data-v-b474cdac] {
-  color: #9803a5;
-  /* transition: color 1s; */
-}
-.fade[data-v-b474cdac]:hover {
-  color: #06a71b;
 }
