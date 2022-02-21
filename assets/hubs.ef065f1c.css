@@ -172,13 +172,13 @@ footer, header, hgroup, main, menu, nav, section {
       font-weight: bold;
       line-height: 1.6;
     }
-a {
+.alink a {
   color: #78cfa8;
 }
-a.alink:link {
+.alink a:link {
   color:#78cfa8;
 }
-a.alink:hover {
+.alink a:hover {
   color: white;
   background:#78cfa8;
 }
