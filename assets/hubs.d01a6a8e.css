@@ -184,21 +184,24 @@ footer, header, hgroup, main, menu, nav, section {
   background:#78cfa8;
 }
  
-a[data-v-051ea7d4] {
+a[data-v-05e47e44] {
   color: #b542b9;
 }
-.fade[data-v-051ea7d4] {
+button[data-v-05e47e44] {
+  width: 150px;
+}
+.fade[data-v-05e47e44] {
   color: #9803a5;
   /* transition: color 1s; */
 }
-.fade[data-v-051ea7d4]:hover {
+.fade[data-v-05e47e44]:hover {
   color: #06a71b;
 }
 
-#edit[data-v-862575f2] {
+#edit[data-v-2a0e1798] {
   color: #bea7d1;
 }
-#edit.upclose[data-v-862575f2] {
+#edit.upclose[data-v-2a0e1798] {
   color: #cc0a0a;
 }
 
