@@ -173,17 +173,16 @@ footer, header, hgroup, main, menu, nav, section {
       line-height: 1.6;
     }
 .alink a {
-  color: #78cfa8;
+  color: #fdfd96;
   text-decoration: underline;
 }
 .alink a:link {
-  color:#78cfa8;
+  color:#fdfd96;
 }
 .alink a:hover {
   color: white;
   background:#78cfa8;
 }
- 
 a[data-v-05e47e44] {
   color: #b542b9;
 }
