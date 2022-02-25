@@ -204,12 +204,22 @@ button[data-v-05e47e44] {
   color: #cc0a0a;
 }
 
-.fakeButton[data-v-181ce8e0] {
+button[data-v-4e7d8fb2] {
+    width: 120px;
+    color: -internal-light-dark(black, white);
+    text-indent: 0px;
+    text-align: center;
+    background-color: -internal-light-dark(rgb(239, 239, 239), rgb(59, 59, 59));
+    margin: 0em;
+    border-color: -internal-light-dark(rgb(118, 118, 118), rgb(133, 133, 133));
+    border-radius: 2px;
+}
+.fakeButton[data-v-4e7d8fb2] {
   color: #9803a5;
   background: #a78e06;
   /* transition: color 1s; */
 }
-.fakeButton[data-v-181ce8e0]:hover {
+.fakeButton[data-v-4e7d8fb2]:hover {
   color: #a78e06;
   background: #9803a5;
 }
