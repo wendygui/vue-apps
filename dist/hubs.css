@@ -134,8 +134,8 @@ footer, header, hgroup, main, menu, nav, section {
 /* JP */
    /* adding margin only to the side */
    #room .spacer-side {
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: 25px;
+    margin-right: 25px;
     }
 
     /*font styles*/
@@ -163,6 +163,11 @@ footer, header, hgroup, main, menu, nav, section {
       margin:0;
       width: 100%;
       height: auto;
+    }
+    img.centerImg {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     /* label vue-app */
