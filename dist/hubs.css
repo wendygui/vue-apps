@@ -1,4 +1,11 @@
 
+#edit[data-v-214c13a8] {
+  color: #bea7d1;
+}
+#edit.upclose[data-v-214c13a8] {
+  color: #cc0a0a;
+}
+
 button[data-v-6e9d9acd] {
     width: 120px;
     color: -internal-light-dark(black, white);
@@ -17,13 +24,6 @@ button[data-v-6e9d9acd] {
 .fakeButton[data-v-6e9d9acd]:hover {
   color: #a78e06;
   background: #9803a5;
-}
-
-#edit[data-v-214c13a8] {
-  color: #bea7d1;
-}
-#edit.upclose[data-v-214c13a8] {
-  color: #cc0a0a;
 }
 /* http://meyerweb.com/eric/tools/css/reset/
    v4.0 | 20180602
@@ -180,17 +180,18 @@ footer, header, hgroup, main, menu, nav, section {
       font-size:6em;
       font-weight: bold;
     }
+
     .labelLgBody{
       font-size:5em;
     }
     
-    /* title vue-app */
-    .titleStyle {
-      font-size:2em;
-      font-weight: bold;
-      /*line-height: 1.6;*/
-      text-shadow: rgb(0, 0, 0) 0px 0 5px, 1px 0 1px white, 0 1px 1px white, -1px 0 1px white, 0 -1px  1px white;
-    }
+/* title vue-app */
+.titleStyle {
+  font-size: 2em;
+  font-weight: bold;
+  text-shadow: rgb(0, 0, 0) 0px 0 5px, 1px 0 1px white, 0 1px 1px white, -1px 0 1px white, 0 -1px  1px white;
+}
+
 .alink {
   color: #fdfd96;
   text-decoration: underline;
