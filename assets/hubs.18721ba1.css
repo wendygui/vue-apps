@@ -175,7 +175,8 @@ footer, header, hgroup, main, menu, nav, section {
     .titleStyle {
       font-size:2em;
       font-weight: bold;
-      line-height: 1.6;
+      /*line-height: 1.6;*/
+      text-shadow: rgb(0, 0, 0) 0px 0 5px, 1px 0 1px white, 0 1px 1px white, -1px 0 1px white, 0 -1px  1px white;
     }
 .alink {
   color: #fdfd96;
