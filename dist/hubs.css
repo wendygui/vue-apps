@@ -189,7 +189,8 @@ footer, header, hgroup, main, menu, nav, section {
 .titleStyle {
   font-size: 2em;
   font-weight: bold;
-  text-shadow: rgb(0, 0, 0) 0px 0 5px, 1px 0 1px white, 0 1px 1px white, -1px 0 1px white, 0 -1px  1px white;
+  padding: 5px;
+  text-shadow: 1px 0 2px black, 1px 0 4px white, 0 1px 2px black, 0 1px 4px white, -1px 0 2px black, -1px 0 4px white, 0 -1px  2px black, 0 -1px  4px white;
 }
 
 .alink {
@@ -205,20 +206,6 @@ footer, header, hgroup, main, menu, nav, section {
 }
 
 
-a[data-v-06a9f319] {
-  color: #b542b9;
-}
-button[data-v-06a9f319] {
-  width: 150px;
-}
-.fade[data-v-06a9f319] {
-  color: #9803a5;
-  /* transition: color 1s; */
-}
-.fade[data-v-06a9f319]:hover {
-  color: #a78e06;
-}
-
 a[data-v-0b72a6b4] {
   color: #b542b9;
 }
@@ -231,4 +218,18 @@ button[data-v-0b72a6b4] {
 }
 .fade[data-v-0b72a6b4]:hover {
   color: #06a71b;
+}
+
+a[data-v-06a9f319] {
+  color: #b542b9;
+}
+button[data-v-06a9f319] {
+  width: 150px;
+}
+.fade[data-v-06a9f319] {
+  color: #9803a5;
+  /* transition: color 1s; */
+}
+.fade[data-v-06a9f319]:hover {
+  color: #a78e06;
 }
