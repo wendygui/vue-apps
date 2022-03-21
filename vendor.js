@@ -183,6 +183,7 @@ class WebLayer {
     __publicField(this, "eventCallback");
     __publicField(this, "isMediaElement", false);
     __publicField(this, "isVideoElement", false);
+    __publicField(this, "isCanvasElement", false);
     __publicField(this, "desiredPseudoState", {
       hover: false,
       active: false,
@@ -263,15 +264,16 @@ class WebLayer {
     }
   }
   update() {
+    var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
     if (this.desiredDOMStateKey !== this.currentDOMStateKey) {
       const desired = this.desiredDOMState;
-      if (desired && (this.isMediaElement || desired.texture.url || desired.fullWidth * desired.fullHeight === 0)) {
+      if (desired && (this.isMediaElement || ((_a2 = desired.texture) == null ? void 0 : _a2.ktx2Url) || ((_b2 = desired.texture) == null ? void 0 : _b2.canvas) || desired.fullWidth * desired.fullHeight === 0)) {
         this.currentDOMStateKey = this.desiredDOMStateKey;
       }
     }
-    const prev = this.previousDOMState;
-    const current = this.currentDOMState;
-    if ((prev == null ? void 0 : prev.texture.url) !== (current == null ? void 0 : current.texture.url)) {
+    const prev = (_g = (_d = (_c = this.previousDOMState) == null ? void 0 : _c.texture) == null ? void 0 : _d.ktx2Url) != null ? _g : (_f = (_e = this.previousDOMState) == null ? void 0 : _e.texture) == null ? void 0 : _f.canvas;
+    const current = (_l = (_i = (_h = this.currentDOMState) == null ? void 0 : _h.texture) == null ? void 0 : _i.ktx2Url) != null ? _l : (_k = (_j = this.previousDOMState) == null ? void 0 : _j.texture) == null ? void 0 : _k.canvas;
+    if (current && prev !== current) {
       this.eventCallback("layerpainted", { target: this.element });
     }
     this.previousDOMStateKey = this.currentDOMStateKey;
@@ -25082,6 +25084,7 @@ const _WebLayer3D = class extends Object3D {
     __publicField(this, "_mediaTexture");
     __publicField(this, "textures", /* @__PURE__ */ new Set());
     __publicField(this, "_previousTexture");
+    __publicField(this, "_textureMap", /* @__PURE__ */ new Map());
     __publicField(this, "contentMesh");
     __publicField(this, "_boundsMesh");
     __publicField(this, "cursor", new Object3D());
@@ -25143,29 +25146,44 @@ const _WebLayer3D = class extends Object3D {
     return this._webLayer.currentDOMState;
   }
   get texture() {
-    var _a2;
+    var _a2, _b2, _c, _d;
     const manager = this.container.manager;
-    if (this._webLayer.isMediaElement) {
+    const _layer = this._webLayer;
+    if (_layer.isMediaElement) {
       const media = this.element;
-      let t2 = this._mediaTexture;
-      if (!t2 || t2.image && media.src !== t2.image.src) {
-        if (t2)
-          t2.dispose();
-        t2 = this._webLayer.isVideoElement ? new VideoTexture(media) : new TextureLoader().load(media.src);
-        t2.wrapS = ClampToEdgeWrapping;
-        t2.wrapT = ClampToEdgeWrapping;
-        t2.minFilter = LinearFilter;
+      let t = this._mediaTexture;
+      if (!t || t.image && media.src !== t.image.src) {
+        if (t)
+          t.dispose();
+        t = _layer.isVideoElement ? new VideoTexture(media) : _layer.isCanvasElement ? new CanvasTexture(media) : new TextureLoader().load(media.src);
+        t.wrapS = ClampToEdgeWrapping;
+        t.wrapT = ClampToEdgeWrapping;
+        t.minFilter = LinearFilter;
         if (manager.textureEncoding)
-          t2.encoding = manager.textureEncoding;
-        this._mediaTexture = t2;
+          t.encoding = manager.textureEncoding;
+        this._mediaTexture = t;
       }
-      return t2;
+      return t;
     }
-    const textureUrl = (_a2 = this._webLayer.currentDOMState) == null ? void 0 : _a2.texture.url;
-    let t = textureUrl ? manager.getTexture(textureUrl, this) : void 0;
-    if (t)
-      this.textures.add(t);
-    return t;
+    const textureHash = (_b2 = (_a2 = this._webLayer.currentDOMState) == null ? void 0 : _a2.texture) == null ? void 0 : _b2.hash;
+    if (textureHash) {
+      if (!this._textureMap.has(textureHash))
+        this._textureMap.set(textureHash, {});
+      const textures = manager.getTexture(textureHash);
+      const clonedTextures = this._textureMap.get(textureHash);
+      if (textures.compressedTexture && !clonedTextures.compressedTexture) {
+        (_c = clonedTextures.canvasTexture) == null ? void 0 : _c.dispose();
+        clonedTextures.canvasTexture = void 0;
+        clonedTextures.compressedTexture = textures.compressedTexture.clone();
+        clonedTextures.compressedTexture.needsUpdate = true;
+      }
+      if (textures.canvasTexture && !clonedTextures.canvasTexture) {
+        clonedTextures.canvasTexture = textures.canvasTexture.clone();
+        clonedTextures.canvasTexture.needsUpdate = true;
+      }
+      return (_d = clonedTextures.compressedTexture) != null ? _d : clonedTextures.canvasTexture;
+    }
+    return void 0;
   }
   get desiredPseudoStates() {
     return this._webLayer.desiredPseudoState;
@@ -25294,6 +25312,11 @@ const _WebLayer3D = class extends Object3D {
     }
     return void 0;
   }
+  querySelectorAll(selector) {
+    var _a2;
+    const elements = this.element.querySelectorAll(selector) || ((_a2 = this.element.shadowRoot) == null ? void 0 : _a2.querySelectorAll(selector));
+    return Array.from(elements).map((e) => this.container.manager.layersByElement.get(e)).filter((l) => l);
+  }
   traverseLayerAncestors(each) {
     const parentLayer = this.parentWebLayer;
     if (parentLayer) {
@@ -25319,7 +25342,9 @@ const _WebLayer3D = class extends Object3D {
   }
   dispose() {
     WebRenderer.disposeLayer(this._webLayer);
-    this.container.manager.disposeLayer(this);
+    for (const t of this.textures) {
+      t.dispose();
+    }
     for (const child of this.childWebLayers)
       child.dispose();
   }
@@ -31151,6 +31176,7 @@ const serializationReplacer = (target2, node) => {
     return "";
   const layer = WebRenderer.layers.get(element);
   if (layer) {
+    layer.manager.updateDOMMetrics(layer);
     const bounds = layer.domMetrics.bounds;
     let attributes = "";
     const extraStyle = `box-sizing:border-box;max-width:${bounds.width}px;max-height:${bounds.height}px;min-width:${bounds.width}px;min-height:${bounds.height}px;visibility:hidden`;
@@ -31175,6 +31201,7 @@ const serializationReplacer = (target2, node) => {
 function getParentsHTML(layer, fullWidth, fullHeight, pixelRatio) {
   const opens = [];
   const closes = [];
+  layer.manager.updateDOMMetrics(layer);
   const metrics = layer.domMetrics;
   let parent = layer.element.parentElement;
   if (!parent)
@@ -33796,25 +33823,26 @@ function nextPowerOf2(n) {
 }
 class WebLayerManagerBase {
   constructor(name = "ethereal-web-store") {
+    __publicField(this, "MINIMUM_RENDER_ATTEMPTS", 3);
     __publicField(this, "WebRenderer", WebRenderer);
     __publicField(this, "autosave", true);
     __publicField(this, "autosaveDelay", 10 * 1e3);
     __publicField(this, "_autosaveTimer");
-    __publicField(this, "_packr", new Packr({ structuredClone: true }));
-    __publicField(this, "_unpackr", new Unpackr({ structuredClone: true }));
+    __publicField(this, "pixelsPerUnit", 1e3);
     __publicField(this, "store");
-    __publicField(this, "_textureUrls", /* @__PURE__ */ new Map());
-    __publicField(this, "_unsavedTextureData", /* @__PURE__ */ new Map());
-    __publicField(this, "_layerState", /* @__PURE__ */ new Map());
     __publicField(this, "serializeQueue", []);
     __publicField(this, "rasterizeQueue", []);
-    __publicField(this, "MINIMUM_RENDER_ATTEMPTS", 3);
-    __publicField(this, "canvasPool", []);
-    __publicField(this, "imagePool", []);
+    __publicField(this, "optimizeQueue", []);
     __publicField(this, "textEncoder", new TextEncoder());
     __publicField(this, "ktx2Encoder", new KTX2Encoder());
-    __publicField(this, "useCreateImageBitmap", false);
-    __publicField(this, "_texturesRequested", /* @__PURE__ */ new Set());
+    __publicField(this, "_unsavedTextureData", /* @__PURE__ */ new Map());
+    __publicField(this, "_stateData", /* @__PURE__ */ new Map());
+    __publicField(this, "_textureData", /* @__PURE__ */ new Map());
+    __publicField(this, "_imagePool", []);
+    __publicField(this, "_packr", new Packr({ structuredClone: true }));
+    __publicField(this, "_unpackr", new Unpackr({ structuredClone: true }));
+    __publicField(this, "_statesRequestedFromStore", /* @__PURE__ */ new Set());
+    __publicField(this, "_texturesRequestedFromStore", /* @__PURE__ */ new Set());
     __publicField(this, "tasksPending", false);
     __publicField(this, "serializePendingCount", 0);
     __publicField(this, "rasterizePendingCount", 0);
@@ -33833,7 +33861,7 @@ class WebLayerManagerBase {
       }
       while (rasterizeQueue.length > 0 && this.rasterizePendingCount < this.MAX_SERIALIZE_TASK_COUNT) {
         this.rasterizePendingCount++;
-        const { hash, url, resolve } = rasterizeQueue.shift();
+        const { hash, svgUrl: url, resolve } = rasterizeQueue.shift();
         this.rasterize(hash, url).finally(() => {
           this.rasterizePendingCount--;
           resolve(void 0);
@@ -33850,15 +33878,18 @@ class WebLayerManagerBase {
     this.store = new LayerStore(name);
   }
   saveStore() {
-    const stateData = Array.from(this._layerState.entries()).filter(([k, v]) => typeof k === "string").map(([k, v]) => ({ hash: k, textureHash: v.texture.hash }));
+    const stateData = Array.from(this._stateData.entries()).filter(([k, v]) => typeof k === "string").map(([k, v]) => {
+      var _a2;
+      return { hash: k, textureHash: (_a2 = v.texture) == null ? void 0 : _a2.hash };
+    });
     const textureData = Array.from(this._unsavedTextureData.values());
     this._unsavedTextureData.clear();
-    return this.loadStore({
+    return this.loadIntoStore({
       stateData,
       textureData
     });
   }
-  async importStore(url) {
+  async importCache(url) {
     const response = await fetch(url);
     const zipped = await response.arrayBuffer();
     const buffer = await new Promise((resolve, reject) => {
@@ -33869,9 +33900,9 @@ class WebLayerManagerBase {
       });
     });
     const data = this._unpackr.unpack(buffer);
-    return this.loadStore(data);
+    return this.loadIntoStore(data);
   }
-  async exportStore(states) {
+  async exportCache(states) {
     const stateData = states ? await this.store.states.bulkGet(states) : await this.store.states.toArray();
     const textureData = await this.store.textures.bulkGet(stateData.map((v) => v.textureHash).filter((v) => typeof v === "string"));
     const data = { stateData, textureData };
@@ -33884,14 +33915,14 @@ class WebLayerManagerBase {
       });
     });
   }
-  async loadStore(data) {
+  async loadIntoStore(data) {
     return Promise.all([
       this.store.states.bulkPut(data.stateData),
       this.store.textures.bulkPut(data.textureData)
     ]);
   }
   getLayerState(hash) {
-    let data = this._layerState.get(hash);
+    let data = this._stateData.get(hash);
     if (!data) {
       data = {
         bounds: new Bounds(),
@@ -33901,13 +33932,10 @@ class WebLayerManagerBase {
         fullWidth: 0,
         fullHeight: 0,
         renderAttempts: 0,
-        texture: {
-          hash: void 0,
-          url: void 0,
-          width: 32,
-          height: 32,
-          pixelRatio: 1
-        },
+        textureWidth: 32,
+        textureHeight: 32,
+        pixelRatio: 1,
+        texture: void 0,
         pseudo: {
           hover: false,
           active: false,
@@ -33915,57 +33943,70 @@ class WebLayerManagerBase {
           target: false
         }
       };
-      this._layerState.set(hash, data);
-    }
-    if (data.texture.hash) {
-      data.texture.url = this.getTextureURL(data.texture.hash);
+      this._stateData.set(hash, data);
     }
     return data;
   }
-  async requestLayerState(hash) {
-    const fullState = this.getLayerState(hash);
-    if (typeof hash === "string" && !fullState.texture.hash) {
-      const state = await this.store.states.get(hash);
-      fullState.texture.hash = state == null ? void 0 : state.textureHash;
+  getTextureState(textureHash) {
+    let data = this._textureData.get(textureHash);
+    if (!data) {
+      data = {
+        hash: textureHash,
+        canvas: void 0,
+        ktx2Url: void 0
+      };
+      this._textureData.set(textureHash, data);
     }
-    return fullState;
+    return data;
   }
-  async updateTexture(textureHash, imageData) {
+  async requestStoredData(hash) {
+    const stateData = this.getLayerState(hash);
+    if (typeof hash !== "string")
+      return stateData;
+    if (!this._statesRequestedFromStore.has(hash)) {
+      this._statesRequestedFromStore.add(hash);
+      const state = await this.store.states.get(hash);
+      if (state == null ? void 0 : state.textureHash) {
+        stateData.texture = this.getTextureState(state.textureHash);
+      }
+    }
+    const textureData = stateData.texture;
+    if (textureData && textureData.hash && !textureData.canvas && !textureData.ktx2Url && !this._texturesRequestedFromStore.has(textureData == null ? void 0 : textureData.hash)) {
+      this._texturesRequestedFromStore.add(textureData.hash);
+      const storedTexture = await this.store.textures.get(textureData.hash);
+      if ((storedTexture == null ? void 0 : storedTexture.texture) && !textureData.canvas) {
+        const data = await new Promise((resolve, reject) => {
+          decompress(storedTexture.texture, { consume: true }, (err2, data2) => {
+            if (err2)
+              return reject(err2);
+            resolve(data2);
+          });
+        });
+        if (!textureData.canvas) {
+          textureData.ktx2Url = URL.createObjectURL(new Blob([data.buffer], { type: "image/ktx2" }));
+        }
+      }
+    }
+    return stateData;
+  }
+  async compressTexture(textureHash) {
+    const data = this._textureData.get(textureHash);
+    const canvas = data == null ? void 0 : data.canvas;
+    if (!canvas)
+      throw new Error("Missing texture canvas");
+    const imageData = this.getImageData(canvas);
     const ktx2Texture = await this.ktx2Encoder.encode(imageData);
-    const textureData = this._unsavedTextureData.get(textureHash) || { hash: textureHash, renderAttempts: 0, timestamp: Date.now(), texture: void 0 };
-    this._textureUrls.set(textureHash, URL.createObjectURL(new Blob([ktx2Texture], { type: "image/ktx2" })));
-    const data = await new Promise((resolve, reject) => {
-      gzip(new Uint8Array(ktx2Texture), { consume: true }, (err2, data2) => {
+    const textureData = this._unsavedTextureData.get(textureHash) || { hash: textureHash, timestamp: Date.now(), texture: void 0 };
+    data.ktx2Url = URL.createObjectURL(new Blob([ktx2Texture], { type: "image/ktx2" }));
+    const bufferData = await new Promise((resolve, reject) => {
+      gzip(new Uint8Array(ktx2Texture), { consume: true }, (err2, bufferData2) => {
         if (err2)
           return reject(err2);
-        resolve(data2);
+        resolve(bufferData2);
       });
     });
-    textureData.texture = data;
+    textureData.texture = bufferData;
     this._unsavedTextureData.set(textureHash, textureData);
-  }
-  async requestTextureData(textureHash) {
-    if (!this._texturesRequested.has(textureHash)) {
-      this._texturesRequested.add(textureHash);
-      return new Promise(async (resolve) => {
-        const textureData = await this.store.textures.get(textureHash);
-        if ((textureData == null ? void 0 : textureData.texture) && !this._unsavedTextureData.has(textureHash)) {
-          const data = await new Promise((resolve2, reject) => {
-            decompress(textureData.texture, { consume: true }, (err2, data2) => {
-              if (err2)
-                return reject(err2);
-              resolve2(data2);
-            });
-          });
-          this._textureUrls.set(textureHash, URL.createObjectURL(new Blob([data.buffer], { type: "image/ktx2" })));
-          resolve(void 0);
-        }
-      });
-    }
-  }
-  getTextureURL(textureHash) {
-    this.requestTextureData(textureHash);
-    return this._textureUrls.get(textureHash);
   }
   scheduleTasksIfNeeded() {
     if (this.tasksPending || this.serializeQueue.length === 0 && this.rasterizeQueue.length === 0)
@@ -33984,14 +34025,19 @@ class WebLayerManagerBase {
     this.serializeQueue.push({ layer, resolve, promise });
     return promise;
   }
+  updateDOMMetrics(layer) {
+    var _a2;
+    const metrics = layer.domMetrics;
+    getBounds(layer.element, metrics.bounds, (_a2 = layer.parentLayer) == null ? void 0 : _a2.element);
+    getMargin(layer.element, metrics.margin);
+    getPadding(layer.element, metrics.padding);
+    getBorder(layer.element, metrics.border);
+  }
   async serialize(layer) {
     var _a2;
+    this.updateDOMMetrics(layer);
     const layerElement = layer.element;
     const metrics = layer.domMetrics;
-    getBounds(layerElement, metrics.bounds, (_a2 = layer.parentLayer) == null ? void 0 : _a2.element);
-    getMargin(layerElement, metrics.margin);
-    getPadding(layerElement, metrics.padding);
-    getBorder(layerElement, metrics.border);
     const { top, left, width, height } = metrics.bounds;
     const { top: marginTop, left: marginLeft, bottom: marginBottom, right: marginRight } = metrics.margin;
     const fullWidth = width + Math.max(marginLeft, 0) + Math.max(marginRight, 0);
@@ -34013,11 +34059,12 @@ class WebLayerManagerBase {
       let layerHTML = await serializeToString(layerElement);
       layerHTML = layerHTML.replace(layerAttribute, `${layerAttribute} ${WebRenderer.RENDERING_ATTRIBUTE}="" ${needsInlineBlock ? `${WebRenderer.RENDERING_INLINE_ATTRIBUTE}="" ` : " "} ` + WebRenderer.getPsuedoAttributes(layer.desiredPseudoState));
       svgDoc = '<svg width="' + textureWidth + '" height="' + textureHeight + '" xmlns="http://www.w3.org/2000/svg"><defs><style type="text/css"><![CDATA[\n' + svgCSS.join("\n") + ']]></style></defs><foreignObject x="0" y="0" width="' + fullWidth * pixelRatio + '" height="' + fullHeight * pixelRatio + '">' + parentsHTML[0] + layerHTML + parentsHTML[1] + "</foreignObject></svg>";
+      layer._svgDoc = svgDoc;
       const stateHashBuffer = await crypto.subtle.digest("SHA-1", this.textEncoder.encode(svgDoc));
       const stateHash = bufferToHex(stateHashBuffer) + "?w=" + fullWidth + ";h=" + fullHeight + ";tw=" + textureWidth + ";th=" + textureHeight;
       result.stateKey = stateHash;
     }
-    const data = await this.requestLayerState(result.stateKey);
+    const data = await this.requestStoredData(result.stateKey);
     data.bounds.left = left;
     data.bounds.top = top;
     data.bounds.width = width;
@@ -34028,19 +34075,21 @@ class WebLayerManagerBase {
     data.margin.bottom = marginBottom;
     data.fullWidth = fullWidth;
     data.fullHeight = fullHeight;
-    data.texture.width = textureWidth;
-    data.texture.height = textureHeight;
-    data.texture.pixelRatio = pixelRatio;
+    data.pixelRatio = pixelRatio;
+    data.textureWidth = textureWidth;
+    data.textureHeight = textureHeight;
     layer.desiredDOMStateKey = result.stateKey;
     if (typeof result.stateKey === "string")
       layer.allStateHashes.add(result.stateKey);
-    result.needsRasterize = !layer.isMediaElement && fullWidth * fullHeight > 0 && !data.texture.hash;
+    result.needsRasterize = !layer.isMediaElement && fullWidth * fullHeight > 0 && !((_a2 = data.texture) == null ? void 0 : _a2.hash);
     result.svgUrl = result.needsRasterize && svgDoc ? "data:image/svg+xml;utf8," + encodeURIComponent(svgDoc) : void 0;
     return result;
   }
   async rasterize(stateHash, svgUrl) {
+    var _a2;
     const stateData = this.getLayerState(stateHash);
-    const svgImage = this.imagePool.pop() || new Image();
+    const svgImage = this._imagePool.pop() || new Image();
+    const { fullWidth, fullHeight, textureWidth, textureHeight, pixelRatio } = stateData;
     await new Promise((resolve, reject) => {
       svgImage.onload = () => {
         resolve();
@@ -34048,67 +34097,52 @@ class WebLayerManagerBase {
       svgImage.onerror = (error) => {
         reject(error);
       };
-      svgImage.width = stateData.texture.width;
-      svgImage.height = stateData.texture.height;
+      svgImage.width = textureWidth;
+      svgImage.height = textureHeight;
       svgImage.src = svgUrl;
     });
     if (!svgImage.complete || svgImage.currentSrc !== svgUrl) {
       throw new Error("Rasterization Failed");
     }
     await svgImage.decode();
-    const { fullWidth, fullHeight, texture } = stateData;
-    const { width: textureWidth, height: textureHeight, pixelRatio } = texture;
     const sourceWidth = Math.floor(fullWidth * pixelRatio);
     const sourceHeight = Math.floor(fullHeight * pixelRatio);
-    const hashData = await this.getImageData(svgImage, sourceWidth, sourceHeight, 30, 30);
+    const hashCanvas = await this.rasterizeToCanvas(svgImage, sourceWidth, sourceHeight, 30, 30);
+    const hashData = this.getImageData(hashCanvas);
     const textureHashBuffer = await crypto.subtle.digest("SHA-1", hashData.data);
     const textureHash = bufferToHex(textureHashBuffer) + "?w=" + textureWidth + ";h=" + textureHeight;
-    const previousCanvasHash = stateData.texture.hash;
-    stateData.texture.hash = textureHash;
+    const previousCanvasHash = (_a2 = stateData.texture) == null ? void 0 : _a2.hash;
     if (previousCanvasHash !== textureHash) {
       stateData.renderAttempts = 0;
     }
     stateData.renderAttempts++;
-    if (stateData.renderAttempts > this.MINIMUM_RENDER_ATTEMPTS && stateData.texture) {
+    stateData.texture = this.getTextureState(textureHash);
+    const hasTexture = stateData.texture.canvas || stateData.texture.ktx2Url;
+    if (stateData.renderAttempts > this.MINIMUM_RENDER_ATTEMPTS && hasTexture) {
       return;
     }
     setTimeout(() => this.addToRasterizeQueue(stateHash, svgUrl), (500 + Math.random() * 1e3) * 2 ^ stateData.renderAttempts);
-    const textureUrl = this.getTextureURL(textureHash);
-    if (textureUrl)
+    if (stateData.texture.canvas)
       return;
-    const imageData = await this.getImageData(svgImage, sourceWidth, sourceHeight, textureWidth, textureHeight);
+    stateData.texture.canvas = await this.rasterizeToCanvas(svgImage, sourceWidth, sourceHeight, textureWidth, textureHeight);
     try {
-      await this.updateTexture(textureHash, imageData);
+      await this.compressTexture(textureHash);
     } finally {
-      this.imagePool.push(svgImage);
+      this._imagePool.push(svgImage);
     }
   }
-  async getImageData(svgImage, sourceWidth, sourceHeight, textureWidth, textureHeight) {
-    const canvas = this.canvasPool.pop() || document.createElement("canvas");
+  async rasterizeToCanvas(svgImage, sourceWidth, sourceHeight, textureWidth, textureHeight, canvas) {
+    canvas = canvas || document.createElement("canvas");
     canvas.width = textureWidth;
     canvas.height = textureHeight;
     const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, textureWidth, textureHeight);
-    let imageData;
-    if (this.useCreateImageBitmap) {
-      const imageBitmap = await createImageBitmap(svgImage, 0, 0, sourceWidth * devicePixelRatio, sourceHeight * devicePixelRatio, {
-        resizeWidth: textureWidth,
-        resizeHeight: textureHeight,
-        resizeQuality: "high"
-      });
-      ctx.drawImage(imageBitmap, 0, 0, sourceWidth, sourceHeight, 0, 0, textureWidth, textureHeight);
-    } else {
-      ctx.drawImage(svgImage, 0, 0, sourceWidth, sourceHeight, 0, 0, textureWidth, textureHeight);
-    }
-    try {
-      imageData = ctx.getImageData(0, 0, textureWidth, textureHeight);
-    } catch (err2) {
-      this.useCreateImageBitmap = false;
-      return this.getImageData(svgImage, sourceWidth, sourceHeight, textureWidth, textureHeight);
-    }
-    setTimeout(() => this.canvasPool.push(canvas), 10);
-    return imageData;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(svgImage, 0, 0, sourceWidth, sourceHeight, 0, 0, textureWidth, textureHeight);
+    return canvas;
+  }
+  getImageData(canvas) {
+    return canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
   }
   addToRasterizeQueue(hash, url) {
     const inQueue = this.rasterizeQueue.find((v) => v.hash === hash);
@@ -34118,8 +34152,12 @@ class WebLayerManagerBase {
     const promise = new Promise((r) => {
       resolve = r;
     });
-    this.rasterizeQueue.push({ hash, url, resolve, promise });
+    this.rasterizeQueue.push({ hash, svgUrl: url, resolve, promise });
     return promise;
+  }
+  optimizeImageData(stateHash) {
+  }
+  addToOptimizeQueue(hash) {
   }
 }
 const _WebLayerManager = class extends WebLayerManagerBase {
@@ -34127,54 +34165,66 @@ const _WebLayerManager = class extends WebLayerManagerBase {
     super();
     __publicField(this, "renderer");
     __publicField(this, "textureEncoding", sRGBEncoding);
-    __publicField(this, "texturesByUrl", /* @__PURE__ */ new Map());
-    __publicField(this, "layersUsingTexture", /* @__PURE__ */ new WeakMap());
-    __publicField(this, "textureLoader", new KTX2Loader());
+    __publicField(this, "ktx2Loader", new KTX2Loader());
+    __publicField(this, "texturesByHash", /* @__PURE__ */ new Map());
     __publicField(this, "layersByElement", /* @__PURE__ */ new WeakMap());
     __publicField(this, "layersByMesh", /* @__PURE__ */ new WeakMap());
-    __publicField(this, "pixelsPerUnit", 1e3);
-    __publicField(this, "_texturePromise", /* @__PURE__ */ new Map());
-    this.textureLoader.setTranscoderPath(_WebLayerManager.DEFAULT_TRANSCODER_PATH);
+    __publicField(this, "_compressedTexturePromise", /* @__PURE__ */ new Map());
+    __publicField(this, "_canvasTexturePromise", /* @__PURE__ */ new Map());
+    this.ktx2Loader.setTranscoderPath(_WebLayerManager.DEFAULT_TRANSCODER_PATH);
   }
   static initialize(renderer) {
     _WebLayerManager.instance = new _WebLayerManager();
     _WebLayerManager.instance.renderer = renderer;
-    _WebLayerManager.instance.textureLoader.detectSupport(renderer);
+    _WebLayerManager.instance.ktx2Loader.detectSupport(renderer);
   }
-  getTexture(url, layer) {
-    var _a2;
-    this._requestTexture(url);
-    const texture = this.texturesByUrl.get(url);
-    if (texture) {
-      if (layer)
-        (_a2 = this.layersUsingTexture.get(texture)) == null ? void 0 : _a2.add(layer);
-      return texture;
+  getTexture(textureHash) {
+    const textureData = this.getTextureState(textureHash);
+    if (!this.texturesByHash.has(textureHash)) {
+      this.texturesByHash.set(textureHash, {});
     }
-    return void 0;
+    this._loadCompressedTextureIfNecessary(textureData);
+    this._loadCanvasTextureIfNecessary(textureData);
+    return this.texturesByHash.get(textureHash);
   }
-  _requestTexture(url) {
-    if (!this._texturePromise.has(url)) {
+  _loadCompressedTextureIfNecessary(textureData) {
+    const ktx2Url = textureData.ktx2Url;
+    if (!ktx2Url)
+      return;
+    if (!this._compressedTexturePromise.has(textureData.hash)) {
       new Promise((resolve) => {
-        this._texturePromise.set(url, resolve);
-        this.textureLoader.loadAsync(url).then((t) => {
+        this._compressedTexturePromise.set(textureData.hash, resolve);
+        this.ktx2Loader.loadAsync(ktx2Url).then((t) => {
           t.wrapS = ClampToEdgeWrapping;
           t.wrapT = ClampToEdgeWrapping;
           t.minFilter = LinearFilter;
           t.encoding = this.textureEncoding;
-          this.layersUsingTexture.set(t, /* @__PURE__ */ new Set());
-          this.texturesByUrl.set(url, t);
+          this.texturesByHash.get(textureData.hash).compressedTexture = t;
         }).finally(() => {
           resolve(void 0);
         });
       });
     }
   }
-  disposeLayer(layer) {
-    for (const t of layer.textures) {
-      const layers = this.layersUsingTexture.get(t);
-      layers.delete(layer);
-      if (layers.size === 0)
-        t.dispose();
+  _loadCanvasTextureIfNecessary(textureData) {
+    var _a2;
+    const threeTextureData = this.texturesByHash.get(textureData.hash);
+    if (threeTextureData.compressedTexture) {
+      (_a2 = threeTextureData.canvasTexture) == null ? void 0 : _a2.dispose();
+      threeTextureData.canvasTexture = void 0;
+      return;
+    }
+    const canvas = textureData.canvas;
+    if (!canvas)
+      return;
+    if (!threeTextureData.canvasTexture && !threeTextureData.compressedTexture) {
+      const t = new CanvasTexture(canvas);
+      t.wrapS = ClampToEdgeWrapping;
+      t.wrapT = ClampToEdgeWrapping;
+      t.minFilter = LinearFilter;
+      t.encoding = this.textureEncoding;
+      t.flipY = false;
+      threeTextureData.canvasTexture = t;
     }
   }
 };
@@ -34191,7 +34241,6 @@ class WebContainer3D extends Object3D {
     __publicField(this, "options");
     __publicField(this, "rootLayer");
     __publicField(this, "raycaster", new Raycaster());
-    __publicField(this, "_raycaster", this.raycaster);
     __publicField(this, "_interactionRays", []);
     __publicField(this, "_hitIntersections", []);
     __publicField(this, "_previousHoverLayers", /* @__PURE__ */ new Set());
@@ -34319,7 +34368,7 @@ class WebContainer3D extends Object3D {
         continue;
       let target2 = layer.element;
       const clientX = intersection.uv.x * fullWidth - margin.left;
-      const clientY = (1 - intersection.uv.y) * fullHeight - margin.bottom;
+      const clientY = intersection.uv.y * fullHeight - margin.top;
       traverseChildElements(layer.element, (el) => {
         if (!target2.contains(el))
           return false;
@@ -34355,7 +34404,7 @@ class WebContainer3D extends Object3D {
       for (const hash of layer.allStateHashes)
         states.add(hash);
     });
-    const blob = await this.manager.exportStore(Array.from(states));
+    const blob = await this.manager.exportCache(Array.from(states));
     downloadBlob(blob, "web." + this.rootLayer.element.id + ".cache");
   }
 }
