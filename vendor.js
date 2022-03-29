@@ -24651,6 +24651,8 @@ const _WebRenderer = class {
       `;
     }
     const renderingStyles = `
+    /*<![CDATA[*/
+        
     :host > * {
       display: flow-root;
     }
@@ -24704,6 +24706,8 @@ const _WebRenderer = class {
       content:none !important;
       box-shadow:none !important;
     }
+
+    /*]]>*/
     `;
     const style = document2.createElement("style");
     style.textContent = renderingStyles;
