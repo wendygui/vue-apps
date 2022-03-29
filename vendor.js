@@ -24651,7 +24651,7 @@ const _WebRenderer = class {
       `;
     }
     const renderingStyles = `
-    :host :nth-child(n) {
+    :host [${_WebRenderer.LAYER_ATTRIBUTE}] {
       display: flow-root;
     }
 
