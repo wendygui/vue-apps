@@ -24582,7 +24582,7 @@ function ensureElementIsInDocument(element, options) {
     return element;
   }
   const container = document.createElement("div");
-  container.id = element.id + "-container";
+  container.id = element.id ? "container-" + element.id : "container";
   container.setAttribute(WebRenderer.RENDERING_CONTAINER_ATTRIBUTE, "");
   container.style.visibility = "hidden";
   container.style.pointerEvents = "none";
@@ -24651,6 +24651,10 @@ const _WebRenderer = class {
       `;
     }
     const renderingStyles = `
+    :host > * {
+      display: flow-root;
+    }
+
     [${_WebRenderer.RENDERING_DOCUMENT_ATTRIBUTE}] * {
       transform: none !important;
     }
@@ -25423,7 +25427,7 @@ const _WebLayer3D = class extends Object3D {
     const marginBottom = isMedia ? 0 : margin.bottom;
     const fullWidth = width + marginLeft + marginRight;
     const fullHeight = height + marginTop + marginBottom;
-    const pixelSize = 1 / this.container.manager.pixelsPerUnit;
+    const pixelSize = 1 / this.container.manager.pixelsPerMeter;
     this.domSize.set(Math.max(pixelSize * fullWidth, 1e-5), Math.max(pixelSize * fullHeight, 1e-5), 1);
     const parentLayer = this.parentWebLayer;
     if (!parentLayer)
@@ -33828,7 +33832,7 @@ class WebLayerManagerBase {
     __publicField(this, "autosave", true);
     __publicField(this, "autosaveDelay", 10 * 1e3);
     __publicField(this, "_autosaveTimer");
-    __publicField(this, "pixelsPerUnit", 1e3);
+    __publicField(this, "pixelsPerMeter", 1e3);
     __publicField(this, "store");
     __publicField(this, "serializeQueue", []);
     __publicField(this, "rasterizeQueue", []);
@@ -33851,7 +33855,7 @@ class WebLayerManagerBase {
     __publicField(this, "_runTasks", () => {
       const serializeQueue = this.serializeQueue;
       const rasterizeQueue = this.rasterizeQueue;
-      while (serializeQueue.length > 0 && this.serializePendingCount < this.MAX_RASTERIZE_TASK_COUNT) {
+      while (serializeQueue.length > 0 && this.serializePendingCount < this.MAX_SERIALIZE_TASK_COUNT) {
         this.serializePendingCount++;
         const { layer, resolve } = serializeQueue.shift();
         this.serialize(layer).then((val) => {
@@ -33859,7 +33863,7 @@ class WebLayerManagerBase {
           resolve(val);
         });
       }
-      while (rasterizeQueue.length > 0 && this.rasterizePendingCount < this.MAX_SERIALIZE_TASK_COUNT) {
+      while (rasterizeQueue.length > 0 && this.rasterizePendingCount < this.MAX_RASTERIZE_TASK_COUNT) {
         this.rasterizePendingCount++;
         const { hash, svgUrl: url, resolve } = rasterizeQueue.shift();
         this.rasterize(hash, url).finally(() => {
@@ -34372,7 +34376,7 @@ class WebContainer3D extends Object3D {
       traverseChildElements(layer.element, (el) => {
         if (!target2.contains(el))
           return false;
-        const elementBoundingRect = getBounds(el, scratchBounds2);
+        const elementBoundingRect = getBounds(el, scratchBounds2, layer.element);
         const offsetLeft = elementBoundingRect.left - bounds.left;
         const offsetTop = elementBoundingRect.top - bounds.top;
         const { width, height } = elementBoundingRect;
