@@ -1,11 +1,4 @@
 
-#edit[data-v-214c13a8] {
-  color: #bea7d1;
-}
-#edit.upclose[data-v-214c13a8] {
-  color: #cc0a0a;
-}
-
 button[data-v-6e9d9acd] {
     width: 120px;
     color: -internal-light-dark(black, white);
@@ -24,6 +17,13 @@ button[data-v-6e9d9acd] {
 .fakeButton[data-v-6e9d9acd]:hover {
   color: #a78e06;
   background: #9803a5;
+}
+
+#edit[data-v-214c13a8] {
+  color: #bea7d1;
+}
+#edit.upclose[data-v-214c13a8] {
+  color: #cc0a0a;
 }
 /* http://meyerweb.com/eric/tools/css/reset/
    v4.0 | 20180602
@@ -82,7 +82,13 @@ footer, header, hgroup, main, menu, nav, section {
     background-color: transparent;  
     color: #1f1d1d;
 }
- 
+
+#room.whitewall{
+  background-color: white;  
+  color: #1f1d1d;
+  border-radius: 0px;
+}
+
 #room h2{
   font-size: 1.5em;
   font-weight: bold;
@@ -185,6 +191,28 @@ footer, header, hgroup, main, menu, nav, section {
       font-size:5em;
     }
     
+/* History Gallery */
+.history_title {
+  color: white;
+  background:#76614E;
+  text-align: left;
+  padding:5px;
+  margin-left: 20px;
+}
+
+.history_year{
+  font-size: 2rem;
+  font-weight: 100;
+  color: white;
+  opacity: 0.3;
+  text-align: right;
+  position: absolute;
+  top: 13px;
+  left:500px;
+  font-style:italic;
+  font-family: 'Courier New', Courier, monospace
+}
+
 /* title vue-app */
 .titleStyle {
   font-size: 2em;
@@ -206,20 +234,6 @@ footer, header, hgroup, main, menu, nav, section {
 }
 
 
-a[data-v-0b72a6b4] {
-  color: #b542b9;
-}
-button[data-v-0b72a6b4] {
-  width: 150px;
-}
-.fade[data-v-0b72a6b4] {
-  color: #9803a5;
-  /* transition: color 1s; */
-}
-.fade[data-v-0b72a6b4]:hover {
-  color: #06a71b;
-}
-
 a[data-v-06a9f319] {
   color: #b542b9;
 }
@@ -232,4 +246,18 @@ button[data-v-06a9f319] {
 }
 .fade[data-v-06a9f319]:hover {
   color: #a78e06;
+}
+
+a[data-v-0b72a6b4] {
+  color: #b542b9;
+}
+button[data-v-0b72a6b4] {
+  width: 150px;
+}
+.fade[data-v-0b72a6b4] {
+  color: #9803a5;
+  /* transition: color 1s; */
+}
+.fade[data-v-0b72a6b4]:hover {
+  color: #06a71b;
 }

@@ -69,7 +69,13 @@ footer, header, hgroup, main, menu, nav, section {
     background-color: transparent;  
     color: #1f1d1d;
 }
- 
+
+#room.whitewall{
+  background-color: white;  
+  color: #1f1d1d;
+  border-radius: 0px;
+}
+
 #room h2{
   font-size: 1.5em;
   font-weight: bold;
@@ -172,6 +178,28 @@ footer, header, hgroup, main, menu, nav, section {
       font-size:5em;
     }
     
+/* History Gallery */
+.history_title {
+  color: white;
+  background:#76614E;
+  text-align: left;
+  padding:5px;
+  margin-left: 20px;
+}
+
+.history_year{
+  font-size: 2rem;
+  font-weight: 100;
+  color: white;
+  opacity: 0.3;
+  text-align: right;
+  position: absolute;
+  top: 13px;
+  left:500px;
+  font-style:italic;
+  font-family: 'Courier New', Courier, monospace
+}
+
 /* title vue-app */
 .titleStyle {
   font-size: 2em;
