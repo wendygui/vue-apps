@@ -1,4 +1,11 @@
 
+#edit[data-v-214c13a8] {
+  color: #bea7d1;
+}
+#edit.upclose[data-v-214c13a8] {
+  color: #cc0a0a;
+}
+
 button[data-v-6e9d9acd] {
     width: 120px;
     color: -internal-light-dark(black, white);
@@ -17,13 +24,6 @@ button[data-v-6e9d9acd] {
 .fakeButton[data-v-6e9d9acd]:hover {
   color: #a78e06;
   background: #9803a5;
-}
-
-#edit[data-v-214c13a8] {
-  color: #bea7d1;
-}
-#edit.upclose[data-v-214c13a8] {
-  color: #cc0a0a;
 }
 /* http://meyerweb.com/eric/tools/css/reset/
    v4.0 | 20180602
@@ -57,6 +57,7 @@ footer, header, hgroup, main, menu, nav, section {
   display: block;
 }
 /* Now, our styles */
+@import url('https://fonts.googleapis.com/css2?family=Buenard&family=Montserrat:wght@100&display=swap');
 
 #room {
     font-family: Avenir,  Arial, Helvetica, sans-serif;
@@ -192,25 +193,49 @@ footer, header, hgroup, main, menu, nav, section {
     }
     
 /* History Gallery */
-.history_title {
-  color: white;
-  background:#76614E;
+#room h2.history_title {
   text-align: left;
-  padding:5px;
-  margin-left: 20px;
+  font-size: 2rem;
+  float: left;
+  padding-bottom: 10px;
+}
+.history_subtitle{
+  background-color: #E3E3E3;
+  padding: 0 6px;
+  display: inline;
+  float: right;
 }
 
+.history_spacer-side{
+  margin: 20px 60px;
+}
 .history_year{
   font-size: 2rem;
   font-weight: 100;
-  color: white;
-  opacity: 0.3;
-  text-align: right;
+  opacity: 0.8;
+  float: right;
+  /* text-align: right;
   position: absolute;
-  top: 13px;
-  left:500px;
-  font-style:italic;
-  font-family: 'Courier New', Courier, monospace
+  top: 30px;
+  left:465px; */
+  font-family: 'Montserrat', sans-serif;
+}
+.history_hr{
+  clear: both;
+  border: 2px solid #E3E3E3;
+  background-color: #E3E3E3;
+}
+.history_hr2{
+
+  border: 0;
+  border-bottom: 3px dotted #E3E3E3;
+  padding-top:9px;
+}
+#room.ivorywall{
+  background: #F9EFE4;
+  color:#42487C;
+  font-family: 'Buenard', serif;
+  border-radius: 0;
 }
 
 /* title vue-app */

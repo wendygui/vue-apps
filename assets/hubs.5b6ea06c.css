@@ -1,4 +1,6 @@
 
+
+@import url('https://fonts.googleapis.com/css2?family=Buenard&family=Montserrat:wght@100&display=swap');
 a[data-v-1580acae] {
   color: #b542b9;
 }
@@ -44,7 +46,6 @@ footer, header, hgroup, main, menu, nav, section {
   display: block;
 }
 /* Now, our styles */
-
 #room {
     font-family: Avenir,  Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -60,37 +61,30 @@ footer, header, hgroup, main, menu, nav, section {
     /* background-color: transparent;   */
     background-color: black; 
  }
-
 #room.darkwall {
     background-color: transparent;  
 }
-
 #room.lightwall {
     background-color: transparent;  
     color: #1f1d1d;
 }
-
 #room.whitewall{
   background-color: white;  
   color: #1f1d1d;
   border-radius: 0px;
 }
-
 #room h2{
   font-size: 1.5em;
   font-weight: bold;
 
 }
-
 #room .headline{
   font-size: 4em;
 }
-
 #room .center {
   margin: 30px;
   padding-left: 25px;
   }
-
 #room .postertitle  {
     display: block;
     font-size: 2em;
@@ -100,106 +94,116 @@ footer, header, hgroup, main, menu, nav, section {
     margin-inline-end: 0px;
     font-weight: bold;
 }
-
-  #room .spacer {
+#room .spacer {
     /* margin-left: 25px;
     margin-right: 25px; */
     margin: 25px;
     }
-
-  #room .squareoff {
+#room .squareoff {
     text-align: justify;
     }
-
-  .column {
+.column {
       float: left;
       width: 50%;
       padding: 10px;
     }
-  
-/* Clear floats after the columns */ 
-  .row:after {
+/* Clear floats after the columns */
+.row:after {
     content: "";
     display: table;
     clear: both;
-    }  
-    
+    }
 /* JP */
-   /* adding margin only to the side */
-   #room .spacer-side {
+/* adding margin only to the side */
+#room .spacer-side {
     margin-left: 25px;
     margin-right: 25px;
     }
-
-    /*font styles*/
-    .oblique {
+/*font styles*/
+.oblique {
       font-style:italic;
     }
-    
-    .quote {
+.quote {
       padding-left: 2.5rem;
       padding-right: 2.5rem;
       color: #DCDCDC;
     }
-    
-    .keyPoint {
+.keyPoint {
       color: #78cfa8;
       font-weight: bold;
     }
-    .largerText{
+.largerText{
       font-size: 3em;
     }
-
-    /*sizing image*/
-    .full {
+/*sizing image*/
+.full {
       padding: 0;
       margin:0;
       width: 100%;
       height: auto;
     }
-    img.centerImg {
+img.centerImg {
       display: block;
       margin-left: auto;
       margin-right: auto;
     }
-
-    /* label vue-app */
-    .labelTitle {
+/* label vue-app */
+.labelTitle {
       font-size:1.2em;
       font-weight: bold;
       line-height: 1.6;
     }
-    .labelLgTitle{
+.labelLgTitle{
       font-size:6em;
       font-weight: bold;
     }
-
-    .labelLgBody{
+.labelLgBody{
       font-size:5em;
     }
-    
 /* History Gallery */
-.history_title {
-  color: white;
-  background:#76614E;
+#room h2.history_title {
   text-align: left;
-  padding:5px;
-  margin-left: 20px;
+  font-size: 2rem;
+  float: left;
+  padding-bottom: 10px;
 }
-
+.history_subtitle{
+  background-color: #E3E3E3;
+  padding: 0 6px;
+  display: inline;
+  float: right;
+}
+.history_spacer-side{
+  margin: 20px 60px;
+}
 .history_year{
   font-size: 2rem;
   font-weight: 100;
-  color: white;
-  opacity: 0.3;
-  text-align: right;
+  opacity: 0.8;
+  float: right;
+  /* text-align: right;
   position: absolute;
-  top: 13px;
-  left:500px;
-  font-style:italic;
-  font-family: 'Courier New', Courier, monospace
+  top: 30px;
+  left:465px; */
+  font-family: 'Montserrat', sans-serif;
 }
+.history_hr{
+  clear: both;
+  border: 2px solid #E3E3E3;
+  background-color: #E3E3E3;
+}
+.history_hr2{
 
+  border: 0;
+  border-bottom: 3px dotted #E3E3E3;
+  padding-top:9px;
+}
+#room.ivorywall{
+  background: #F9EFE4;
+  color:#42487C;
+  font-family: 'Buenard', serif;
+  border-radius: 0;
+}
 /* title vue-app */
 .titleStyle {
   font-size: 2em;
@@ -207,7 +211,6 @@ footer, header, hgroup, main, menu, nav, section {
   padding: 5px;
   text-shadow: 1px 0 2px black, 1px 0 4px white, 0 1px 2px black, 0 1px 4px white, -1px 0 2px black, -1px 0 4px white, 0 -1px  2px black, 0 -1px  4px white;
 }
-
 .alink {
   color: #fdfd96;
   text-decoration: underline;
