@@ -57,7 +57,7 @@ footer, header, hgroup, main, menu, nav, section {
   display: block;
 }
 /* Now, our styles */
-@import url('https://fonts.googleapis.com/css2?family=Buenard&family=Montserrat:wght@100;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Buenard&family=Montserrat:wght@100&family=Roboto:wght@900&display=swap');
 #room {
     font-family: Avenir,  Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -144,9 +144,10 @@ footer, header, hgroup, main, menu, nav, section {
     margin-right: 25px;
     }
     .lgquote{
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'Roboto', sans-serif;
       font-size: 5rem;
       font-weight: 900;
+      color: #8E9097;
     }
     /*font styles*/
     .oblique {
@@ -262,20 +263,6 @@ footer, header, hgroup, main, menu, nav, section {
 }
 
 
-a[data-v-0b72a6b4] {
-  color: #b542b9;
-}
-button[data-v-0b72a6b4] {
-  width: 150px;
-}
-.fade[data-v-0b72a6b4] {
-  color: #9803a5;
-  /* transition: color 1s; */
-}
-.fade[data-v-0b72a6b4]:hover {
-  color: #06a71b;
-}
-
 a[data-v-06a9f319] {
   color: #b542b9;
 }
@@ -288,4 +275,18 @@ button[data-v-06a9f319] {
 }
 .fade[data-v-06a9f319]:hover {
   color: #a78e06;
+}
+
+a[data-v-0b72a6b4] {
+  color: #b542b9;
+}
+button[data-v-0b72a6b4] {
+  width: 150px;
+}
+.fade[data-v-0b72a6b4] {
+  color: #9803a5;
+  /* transition: color 1s; */
+}
+.fade[data-v-0b72a6b4]:hover {
+  color: #06a71b;
 }
