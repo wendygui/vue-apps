@@ -6,7 +6,7 @@
   color: #cc0a0a;
 }
 
-button[data-v-6e9d9acd] {
+button[data-v-d5ef8e02] {
     width: 120px;
     color: -internal-light-dark(black, white);
     text-indent: 0px;
@@ -16,12 +16,12 @@ button[data-v-6e9d9acd] {
     border-color: -internal-light-dark(rgb(118, 118, 118), rgb(133, 133, 133));
     border-radius: 2px;
 }
-.fakeButton[data-v-6e9d9acd] {
+.fakeButton[data-v-d5ef8e02] {
   color: #9803a5;
   background: #a78e06;
   /* transition: color 1s; */
 }
-.fakeButton[data-v-6e9d9acd]:hover {
+.fakeButton[data-v-d5ef8e02]:hover {
   color: #a78e06;
   background: #9803a5;
 }

@@ -24582,7 +24582,7 @@ function ensureElementIsInDocument(element, options) {
     return element;
   }
   const container = document.createElement("div");
-  container.id = element.id ? "container-" + element.id : "container";
+  container.id = element.id ? "container-" + element.id : "";
   container.setAttribute(WebRenderer.RENDERING_CONTAINER_ATTRIBUTE, "");
   container.style.visibility = "hidden";
   container.style.pointerEvents = "none";
@@ -24651,7 +24651,7 @@ const _WebRenderer = class {
       `;
     }
     const renderingStyles = `
-    :host [${_WebRenderer.LAYER_ATTRIBUTE}] {
+    :host > [${_WebRenderer.LAYER_ATTRIBUTE}] {
       display: flow-root;
     }
 
@@ -24682,7 +24682,6 @@ const _WebRenderer = class {
     }
     
     [${_WebRenderer.RENDERING_INLINE_ATTRIBUTE}] {
-      top: var(--x-inline-top) !important;
       width:auto !important;
     }
 
@@ -25245,6 +25244,8 @@ const _WebLayer3D = class extends Object3D {
     }
   }
   updateContent() {
+    if (this.parentWebLayer && !this.parentWebLayer.domLayout)
+      return;
     const mesh = this.contentMesh;
     const texture = this.texture;
     const material = mesh.material;
@@ -31178,6 +31179,8 @@ const serializationReplacer = (target2, node) => {
   const tagName = (_a2 = element.tagName) == null ? void 0 : _a2.toLowerCase();
   if (tagName === "style" || tagName === "link")
     return "";
+  if (tagName === "span")
+    return;
   const layer = WebRenderer.layers.get(element);
   if (layer) {
     layer.manager.updateDOMMetrics(layer);
@@ -31223,7 +31226,7 @@ function getParentsHTML(layer, fullWidth, fullHeight, pixelRatio) {
       attributes += `${a.name}="${value}" `;
     }
     const open = "<" + tag + (tag === "html" ? ` ${WebRenderer.RENDERING_DOCUMENT_ATTRIBUTE}="" xmlns="http://www.w3.org/1999/xhtml"
-                    style="${getPixelRatioStyling(pixelRatio)} --x-width:${metrics.bounds.width}px; --x-height:${metrics.bounds.height}px; --x-inline-top:${metrics.border.top + metrics.margin.top + metrics.padding.top}px; ${style} width:${fullWidth}px; height:${fullHeight}px;" ` : ` style="${style}" ${WebRenderer.RENDERING_PARENT_ATTRIBUTE}="" `) + attributes + " >";
+                    style="${getPixelRatioStyling(pixelRatio)} --x-width:${metrics.bounds.width}px; --x-height:${metrics.bounds.height}px; ${style} width:${fullWidth}px; height:${fullHeight}px;" ` : ` style="${style}" ${WebRenderer.RENDERING_PARENT_ATTRIBUTE}="" `) + attributes + " >";
     opens.unshift(open);
     const close = "</" + tag + ">";
     closes.push(close);
@@ -33881,6 +33884,9 @@ class WebLayerManagerBase {
     });
     this.store = new LayerStore(name);
   }
+  get pixelPerUnit() {
+    return this.pixelsPerMeter;
+  }
   saveStore() {
     const stateData = Array.from(this._stateData.entries()).filter(([k, v]) => typeof k === "string").map(([k, v]) => {
       var _a2;
@@ -33894,21 +33900,32 @@ class WebLayerManagerBase {
     });
   }
   async importCache(url) {
-    const response = await fetch(url);
-    const zipped = await response.arrayBuffer();
-    const buffer = await new Promise((resolve, reject) => {
-      decompress(new Uint8Array(zipped), { consume: true }, (err2, data2) => {
-        if (err2)
-          return reject(err2);
-        resolve(data2);
+    try {
+      const response = await fetch(url);
+      const zipped = await response.arrayBuffer();
+      const buffer = await new Promise((resolve, reject) => {
+        decompress(new Uint8Array(zipped), { consume: true }, (err2, data2) => {
+          if (err2)
+            return reject(err2);
+          resolve(data2);
+        });
       });
-    });
-    const data = this._unpackr.unpack(buffer);
-    return this.loadIntoStore(data);
+      const data = this._unpackr.unpack(buffer);
+      data.textureData = data.textureData.filter((t) => t && t.hash && t.texture);
+      console.log(`Importing weblayer cache data from ${url} with ` + data.stateData.length + " states and " + data.textureData.length + " textures");
+      console.log(data);
+      return this.loadIntoStore(data);
+    } catch (err2) {
+      console.warn("Failed to import cache", err2);
+    }
   }
-  async exportCache(states) {
-    const stateData = states ? await this.store.states.bulkGet(states) : await this.store.states.toArray();
-    const textureData = await this.store.textures.bulkGet(stateData.map((v) => v.textureHash).filter((v) => typeof v === "string"));
+  getActiveStateHashes() {
+    return Array.from(this._stateData.keys()).filter((k) => typeof k === "string");
+  }
+  async exportCache(states = this.getActiveStateHashes()) {
+    const stateData = await this.store.states.bulkGet(states);
+    let textureData = await this.store.textures.bulkGet(stateData.map((v) => v.textureHash).filter((v) => typeof v === "string"));
+    textureData = textureData.filter((v) => v && typeof v.hash === "string" && v.texture);
     const data = { stateData, textureData };
     const buffer = this._packr.pack(data);
     return new Promise((resolve, reject) => {
@@ -33919,7 +33936,30 @@ class WebLayerManagerBase {
       });
     });
   }
+  async downloadCache() {
+    var _a2;
+    await this.saveStore();
+    const blob = await this.exportCache();
+    const path = location.pathname.split("/").filter((x2) => x2);
+    downloadBlob(blob, "web." + location.host + "." + ((_a2 = path[path.length - 1]) != null ? _a2 : "") + ".cache");
+  }
   async loadIntoStore(data) {
+    for (const t of data.textureData) {
+      const texture = this._textureData.get(t.hash) || {
+        hash: t.hash,
+        canvas: void 0,
+        ktx2Url: void 0
+      };
+      if (!texture.ktx2Url && t.texture)
+        texture.ktx2Url = URL.createObjectURL(new Blob([t.texture], { type: "image/ktx2" }));
+    }
+    for (const s of data.stateData) {
+      const state = this.getLayerState(s.hash);
+      if (!state.texture && s.textureHash) {
+        const textureData = this._textureData.get(s.textureHash);
+        state.texture = textureData;
+      }
+    }
     return Promise.all([
       this.store.states.bulkPut(data.stateData),
       this.store.textures.bulkPut(data.textureData)
